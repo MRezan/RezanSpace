@@ -1,0 +1,76 @@
+@media (max-width: 700px) {
+  .social-top.upgraded.user-appbar {
+    width: 100%;
+    height: 64px;
+    grid-template-columns: 44px minmax(0, 1fr) 48px;
+    gap: 8px;
+    padding: 0 12px;
+    align-items: center;
+  }
+
+  .social-top.upgraded.user-appbar > .app-brand {
+    display: flex !important;
+    grid-column: 1;
+    width: 44px;
+    min-width: 0;
+  }
+
+  .user-appbar .app-brand .social-logo {
+    display: grid !important;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    font-size: 20px;
+  }
+
+  .user-appbar .app-brand .app-wordmark {
+    display: none;
+  }
+
+  .social-top.upgraded.user-appbar > .app-search {
+    display: flex;
+    grid-column: 2;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .user-appbar .app-search input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .social-top.upgraded.user-appbar > .app-actions {
+    display: flex !important;
+    grid-column: 3;
+    width: 48px;
+    min-width: 0;
+    gap: 0 !important;
+    justify-content: flex-end !important;
+  }
+
+  .user-appbar .account-trigger {
+    width: 42px;
+    height: 42px;
+    padding: 3px;
+    justify-content: center;
+  }
+
+  .user-appbar .account-trigger .social-avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .social-top.upgraded.user-appbar > nav {
+    grid-column: auto;
+    justify-self: stretch;
+    width: 100vw;
+    max-width: none;
+    margin: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .user-appbar .app-search input {
+    font-size: 9px;
+  }
+}

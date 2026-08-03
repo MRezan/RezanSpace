@@ -1,0 +1,63 @@
+/* The composer deliberately avoids the global site footer element/styles. */
+.comments-v2 .comment-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 38px;
+  margin-top: 9px;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.comments-v2 .comment-actions small {
+  color: #929ba8;
+  font-size: 8px;
+}
+
+.comments-v2 .comment-actions small.near-limit {
+  color: #e65a6b;
+}
+
+.comments-v2 .comment-actions button {
+  min-width: 108px;
+  border: 0;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #5965f5, #7358e6);
+  color: #fff;
+  padding: 10px 15px;
+  box-shadow: 0 5px 13px rgba(89, 101, 245, .2);
+  font-size: 8px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.comments-v2 .comment-actions button:disabled {
+  background: #e3e6ec;
+  color: #9ca5b2;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.comments-v2 .comment-box {
+  padding: 16px;
+}
+
+.comments-v2 .comment-box textarea {
+  min-height: 112px;
+}
+
+.comments-v2 .no-comments {
+  padding: 34px 20px;
+}
+
+.comments-v2 .no-comments > span {
+  width: 44px;
+  height: 44px;
+}
+
+@media (max-width: 620px) {
+  .comments-v2 .comment-actions button {
+    min-width: 100px;
+  }
+}

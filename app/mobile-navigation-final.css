@@ -1,0 +1,46 @@
+@media(max-width:700px){
+  body:has(.user-appbar){padding-bottom:calc(66px + env(safe-area-inset-bottom))!important}
+  .social-top.upgraded.user-appbar{
+    position:sticky!important;top:0!important;z-index:100!important;
+    width:100%!important;height:64px!important;
+    display:grid!important;grid-template-columns:40px minmax(0,1fr) 82px!important;
+    align-items:center!important;gap:8px!important;padding:0 10px!important;
+    overflow:visible!important;background:#fff!important;
+  }
+  .user-appbar>.app-brand{display:flex!important;grid-column:1!important;width:40px!important;min-width:40px!important}
+  .user-appbar .social-logo{display:grid!important;width:38px!important;height:38px!important;border-radius:11px!important}
+  .user-appbar .app-wordmark{display:none!important}
+  .user-appbar>.app-search{display:flex!important;grid-column:2!important;width:100%!important;min-width:0!important;height:40px!important;padding:0 10px!important;border-radius:12px!important}
+  .user-appbar .app-search>span{display:block!important;flex:0 0 auto!important}
+  .user-appbar .app-search input{display:block!important;width:100%!important;min-width:0!important;padding:0 6px!important;font-size:10px!important}
+  .user-appbar .app-search kbd{display:none!important}
+  .user-appbar>.app-actions{display:flex!important;grid-column:3!important;width:82px!important;min-width:82px!important;gap:4px!important;align-items:center!important;justify-content:flex-end!important}
+  .user-appbar .notice{display:grid!important;flex:0 0 38px!important;width:38px!important;height:38px!important;min-width:38px!important}
+  .user-appbar .account-trigger{display:flex!important;flex:0 0 38px!important;width:38px!important;height:38px!important;min-width:38px!important;padding:2px!important;border:0!important}
+  .user-appbar .account-trigger .social-avatar{display:grid!important;width:34px!important;height:34px!important}
+  .user-appbar .account-trigger b,.user-appbar .account-trigger em{display:none!important}
+  .social-top.upgraded.user-appbar>nav{
+    display:flex!important;position:fixed!important;z-index:1000!important;
+    left:0!important;right:0!important;bottom:0!important;top:auto!important;
+    width:100%!important;height:calc(64px + env(safe-area-inset-bottom))!important;
+    margin:0!important;padding:0 8px env(safe-area-inset-bottom)!important;
+    align-items:stretch!important;justify-content:space-around!important;
+    background:rgba(255,255,255,.98)!important;border-top:1px solid #e3e7ee!important;
+    box-shadow:0 -6px 24px rgba(32,43,72,.1)!important;backdrop-filter:blur(14px)!important;
+  }
+  .social-top.upgraded.user-appbar>nav>a{
+    display:flex!important;flex:1 1 33.333%!important;width:auto!important;height:64px!important;
+    flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:4px!important;
+    border:0!important;border-top:3px solid transparent!important;color:#778394!important;
+  }
+  .social-top.upgraded.user-appbar>nav>a::before{display:block!important;width:21px!important;height:21px!important}
+  .social-top.upgraded.user-appbar>nav>a>small{display:block!important;font-size:9px!important;line-height:1!important;font-weight:700!important;color:inherit!important;margin:0!important}
+  .social-top.upgraded.user-appbar>nav>a.active{color:#526cff!important;border-top-color:#526cff!important;background:linear-gradient(to bottom,rgba(82,108,255,.08),transparent 72%)!important}
+  .user-appbar .notifications-menu,.user-appbar .account-menu{z-index:1100!important}
+}
+@media(max-width:350px){
+  .social-top.upgraded.user-appbar{grid-template-columns:36px minmax(0,1fr) 74px!important;gap:5px!important;padding:0 7px!important}
+  .user-appbar .social-logo{width:34px!important;height:34px!important}
+  .user-appbar>.app-actions{width:74px!important;min-width:74px!important;gap:2px!important}
+  .user-appbar .notice,.user-appbar .account-trigger{flex-basis:36px!important;width:36px!important;height:36px!important;min-width:36px!important}
+}

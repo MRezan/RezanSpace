@@ -1,0 +1,18 @@
+/* Reaction states are intentionally isolated: only the selected button changes color. */
+.reaction-buttons{gap:10px!important;min-width:166px;color:#687486!important}
+.reaction-buttons>.like-story:not(.liked),
+.reaction-buttons>.dislike-story:not(.disliked){color:#687486!important;background:transparent!important}
+.reaction-buttons>.like-story.liked{color:#1557e8!important;background:transparent!important}
+.reaction-buttons>.dislike-story.disliked{color:#e34f5f!important;background:transparent!important}
+.reaction-buttons>.like-story .like-icon,
+.reaction-buttons>.dislike-story .dislike-icon{background:currentColor}
+.reaction-buttons>button{gap:8px!important;margin:0!important}
+.reaction-buttons.compact{gap:8px!important;min-width:64px}
+.social-card>footer{column-gap:8px!important;padding:7px 12px!important}
+.social-card>footer>.comment-action,
+.social-card>footer>.share-story{gap:8px!important}
+.story-social{gap:14px!important;align-items:center;flex-wrap:wrap}
+.story-social>.comment-action,
+.story-social>.save-story,
+.story-social>.share-story{gap:8px!important;margin:0 2px}
+@media(max-width:480px){.reaction-buttons{gap:7px!important;min-width:142px}.story-social{gap:7px!important}.story-social>.comment-action,.story-social>.save-story,.story-social>.share-story{margin:0}}

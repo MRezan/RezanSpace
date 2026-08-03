@@ -1,0 +1,19 @@
+@media (max-width: 620px) {
+  .comments-v2 .comment-box > .comment-avatar {
+    display: grid !important;
+    grid-column: 1;
+    align-self: start;
+  }
+
+  .comments-v2 .comment-box > .comment-compose-body {
+    grid-column: 2;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .comments-v2 .comment-compose-body textarea,
+  .comments-v2 .comment-compose-body .comment-actions {
+    width: 100%;
+    min-width: 0;
+  }
+}

@@ -1,0 +1,26 @@
+.story-author > a:first-child > span {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #5965f5;
+  color: #fff;
+  display: grid;
+  place-items: center;
+}
+
+.story-author > div a:hover,
+.social-card > header a:hover b,
+.comment-bubble header a:hover b {
+  color: #5965f5;
+}
+
+.suggest > a.avatar {
+  display: grid;
+}
+
+.suggest p small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 125px;
+}

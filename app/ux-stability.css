@@ -1,0 +1,94 @@
+/* Stable controls prevent neighboring actions from jumping when state changes. */
+main footer {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+.like-story,
+.save-story,
+.share-story {
+  min-width: 76px;
+  min-height: 38px;
+}
+
+.like-story.compact,
+.save-story.compact,
+.share-story.compact {
+  min-width: 36px;
+  min-height: 34px;
+}
+
+.like-story em,
+.save-story em,
+.share-story em {
+  width: 38px;
+  text-align: left;
+}
+
+.follow-button {
+  min-width: 78px;
+  text-align: center;
+}
+
+.follow-button.compact {
+  min-width: 62px;
+}
+
+.user-appbar nav > a {
+  transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+
+.user-appbar nav > a.active {
+  color: #526cff;
+  border-bottom: 3px solid #526cff;
+  background: linear-gradient(to top, rgba(82,108,255,.06), transparent 55%);
+}
+
+.user-appbar nav > a:focus-visible,
+.notice:focus-visible,
+.account-trigger:focus-visible,
+.like-story:focus-visible,
+.save-story:focus-visible,
+.share-story:focus-visible,
+.follow-button:focus-visible {
+  outline: 3px solid rgba(89,101,245,.25);
+  outline-offset: 2px;
+}
+
+@media (max-width: 700px) {
+  body:has(.user-appbar) {
+    padding-bottom: 62px;
+  }
+
+  .social-top.upgraded.user-appbar nav {
+    display: flex;
+    position: fixed;
+    z-index: 90;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 62px;
+    justify-content: space-around;
+    background: rgba(255,255,255,.97);
+    border-top: 1px solid #e5e9ef;
+    box-shadow: 0 -5px 22px rgba(32,43,72,.08);
+    backdrop-filter: blur(14px);
+  }
+
+  .social-top.upgraded.user-appbar {
+    backdrop-filter: none;
+  }
+
+  .social-top.upgraded.user-appbar nav > a {
+    width: 33.333%;
+    border-bottom: 0;
+    border-top: 3px solid transparent;
+  }
+
+  .social-top.upgraded.user-appbar nav > a.active {
+    border-bottom: 0;
+    border-top-color: #526cff;
+    background: linear-gradient(to bottom, rgba(82,108,255,.07), transparent 70%);
+  }
+}

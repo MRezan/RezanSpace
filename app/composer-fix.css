@@ -1,0 +1,24 @@
+.compose-modal > .compose-modal-head {
+  height: 62px;
+  border-bottom: 1px solid #e7eaf0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.compose-modal-head h2 {
+  font-size: 19px;
+  margin: 0;
+}
+
+.compose-modal-head button {
+  position: absolute;
+  right: 0;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: #eef1f5;
+  font-size: 20px;
+}

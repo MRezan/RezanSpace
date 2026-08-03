@@ -1,0 +1,1 @@
+.suggest button{min-width:68px;transition:.18s}.suggest button.following{background:#eef0ff;color:#5965f5;border-color:#cbd0ff}.suggest button.following:before{content:'✓ ';}.suggest button:disabled{opacity:.55}

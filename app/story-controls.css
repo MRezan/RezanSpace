@@ -1,0 +1,35 @@
+.bookmark-icon {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  flex: 0 0 auto;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 3.5A1.5 1.5 0 0 1 7.5 2h9A1.5 1.5 0 0 1 18 3.5V22l-6-4.4L6 22z' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 3.5A1.5 1.5 0 0 1 7.5 2h9A1.5 1.5 0 0 1 18 3.5V22l-6-4.4L6 22z' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+
+.save-story.saved .bookmark-icon {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 3.5A1.5 1.5 0 0 1 7.5 2h9A1.5 1.5 0 0 1 18 3.5V22l-6-4.4L6 22z' fill='%23000'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 3.5A1.5 1.5 0 0 1 7.5 2h9A1.5 1.5 0 0 1 18 3.5V22l-6-4.4L6 22z' fill='%23000'/%3E%3C/svg%3E");
+}
+
+.share-story {
+  position: relative;
+  border: 0;
+  background: none;
+  color: #667283;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.share-story em { font-style: normal; }
+.share-icon { width: 19px; height: 19px; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='18' cy='5' r='2.5' fill='%23000'/%3E%3Ccircle cx='6' cy='12' r='2.5' fill='%23000'/%3E%3Ccircle cx='18' cy='19' r='2.5' fill='%23000'/%3E%3Cpath d='m8.2 10.8 7.6-4.5M8.2 13.2l7.6 4.5' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E") center/contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='18' cy='5' r='2.5' fill='%23000'/%3E%3Ccircle cx='6' cy='12' r='2.5' fill='%23000'/%3E%3Ccircle cx='18' cy='19' r='2.5' fill='%23000'/%3E%3Cpath d='m8.2 10.8 7.6-4.5M8.2 13.2l7.6 4.5' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E") center/contain no-repeat; }
+.share-story:hover { color: #5965f5; }
+.action-toast { position:absolute;right:0;bottom:30px;white-space:nowrap;background:#172033;color:#fff;border-radius:7px;padding:6px 8px;font:normal 8px Arial;box-shadow:0 8px 22px rgba(20,30,50,.2);z-index:20; }
+.social-card>footer .share-story { width:100%; padding:11px!important; font-size:11px; font-weight:700; }
+.story-social .share-story { padding:8px 12px; font-size:9px; }
+.story-actions .save-story,.story-actions .share-story{padding:8px;}
