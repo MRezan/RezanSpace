@@ -14,7 +14,7 @@ type Notice = {
   created_at: string;
 };
 
-type Viewer = { name: string } | null;
+type Viewer = { name: string; avatar_url?:string } | null;
 
 export function UserShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -38,10 +38,13 @@ export function UserAppBar() {
     setViewer(cached ? JSON.parse(cached) : null);
     const token = localStorage.getItem('rezantech_session');
     if (!token) return;
+    fetch(`${API}/api/auth.php?action=me`, { headers:{ Authorization:`Bearer ${token}` } }).then(r=>r.ok?r.json():null).then(data=>{if(data?.user){setViewer(data.user);localStorage.setItem('rezantech_user',JSON.stringify(data.user))}});
     fetch(`${API}/api/library.php`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
       .then(data => data && setNotices(data.notifications || []));
   }, [pathname]);
+
+  useEffect(()=>{function refresh(){const cached=localStorage.getItem('rezantech_user');setViewer(cached?JSON.parse(cached):null)}window.addEventListener('rezantech:profile-updated',refresh);return()=>window.removeEventListener('rezantech:profile-updated',refresh)},[]);
 
   useEffect(() => {
     function shortcut(event: KeyboardEvent) {
@@ -120,10 +123,10 @@ export function UserAppBar() {
         </Link>) : <div className="empty-notices"><b>🔔</b><p>No notifications yet.</p><small>Comments and publishing updates will appear here.</small></div>}
       </div>}
       <button className="account-trigger" onClick={() => { setMenu(!menu); setNoticesOpen(false); }}>
-        <span className="social-avatar">{initial}</span><b>{viewer?.name || 'Account'}</b><em>⌄</em>
+        <span className="social-avatar">{viewer?.avatar_url?<img src={viewer.avatar_url} alt=""/>:initial}</span><b>{viewer?.name || 'Account'}</b><em>⌄</em>
       </button>
       {menu && <div className="account-menu">
-        <div><span className="social-avatar">{initial}</span><p><b>{viewer?.name || 'Guest reader'}</b><small>{viewer ? 'View your profile' : 'Sign in to personalize'}</small></p></div>
+        <div><span className="social-avatar">{viewer?.avatar_url?<img src={viewer.avatar_url} alt=""/>:initial}</span><p><b>{viewer?.name || 'Guest reader'}</b><small>{viewer ? 'View your profile' : 'Sign in to personalize'}</small></p></div>
         <Link href={viewer ? '/profile' : '/account'}>◎ Profile</Link>
         <Link href={viewer ? '/library' : '/account'}>♧ Saved posts</Link>
         {viewer && <Link href="/">✎ Create from timeline</Link>}

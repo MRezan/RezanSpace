@@ -12,7 +12,7 @@ $name = trim((string)($_GET['name'] ?? ''));
 
 if ($name !== '') {
     $personQuery = $pdo->prepare(
-        'SELECT u.id,u.name,u.bio,u.website,u.profession,u.address,u.interests,u.created_at,
+        'SELECT u.id,u.name,u.bio,u.website,u.avatar_url,u.profession,u.address,u.interests,u.created_at,
                 (SELECT COUNT(*) FROM posts p WHERE p.author=u.name AND p.status="published") post_count,
                 (SELECT COUNT(*) FROM author_follows f WHERE f.author_name=u.name) follower_count
          FROM users u WHERE u.name=? LIMIT 1'
@@ -27,7 +27,7 @@ if ($name !== '') {
         $count->execute([$name]);
         $followers = $pdo->prepare('SELECT COUNT(*) FROM author_follows WHERE author_name=?');
         $followers->execute([$name]);
-        $person = ['id'=>null,'name'=>$name,'bio'=>'Technology contributor at RezanTech.','website'=>'','profession'=>'','address'=>'','interests'=>'','created_at'=>null,'post_count'=>(int)$count->fetchColumn(),'follower_count'=>(int)$followers->fetchColumn()];
+        $person = ['id'=>null,'name'=>$name,'bio'=>'Community contributor at RezanTech.','website'=>'','avatar_url'=>'','profession'=>'','address'=>'','interests'=>'','created_at'=>null,'post_count'=>(int)$count->fetchColumn(),'follower_count'=>(int)$followers->fetchColumn()];
     }
     $posts = $pdo->prepare(
         'SELECT p.id,p.slug,p.title,p.excerpt,p.image_url,p.author,p.published_at,c.name category_name,
@@ -51,7 +51,7 @@ $params = [];
 $exclude = '';
 if ($viewer) { $exclude = 'WHERE u.id<>?'; $params[] = $viewer['id']; }
 $query = $pdo->prepare(
-    "SELECT u.id,u.name,u.bio,
+    "SELECT u.id,u.name,u.bio,u.avatar_url,
             (SELECT COUNT(*) FROM posts p WHERE p.author=u.name AND p.status='published') post_count,
             (SELECT COUNT(*) FROM author_follows f WHERE f.author_name=u.name) follower_count
      FROM users u $exclude

@@ -32,6 +32,7 @@ import "./notification-alignment.css";
 import "./professional-profile.css";
 import "./reaction-state-fix.css";
 import "./mobile-navigation-final.css";
+import "./profile-avatar.css";
 import { UserShell } from "./user-app-bar";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://rezantech.web.app";

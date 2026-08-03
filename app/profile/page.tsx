@@ -1,14 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { ChangeEvent, FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { posts as allStories } from '../posts';
 import { categories } from '../categories';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 type View = 'home' | 'edit' | 'write' | 'library';
-type User = { id:number; name:string; email:string; bio:string; website:string; profession:string; address:string; interests:string; role:string; created_at:string };
+type User = { id:number; name:string; email:string; bio:string; website:string; avatar_url:string; profession:string; address:string; interests:string; role:string; created_at:string };
 type UserPost = { id:number; title:string; excerpt:string; status:string; created_at:string };
 
 export default function Profile() {
@@ -46,16 +46,29 @@ export default function Profile() {
   async function update(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const token = localStorage.getItem('rezantech_session');
+    const formData = new FormData(event.currentTarget);
     const response = await fetch(`${API}/api/profile.php`, {
       method: 'PUT',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))),
+      body: JSON.stringify(Object.fromEntries(formData)),
     });
     if (response.ok) {
+      const cached = JSON.parse(localStorage.getItem('rezantech_user') || '{}');
+      localStorage.setItem('rezantech_user', JSON.stringify({ ...cached, name:formData.get('name') }));
+      window.dispatchEvent(new CustomEvent('rezantech:profile-updated'));
       setNotice('Your profile was updated.');
       setView('home');
       load();
     }
+  }
+
+  async function setAvatar(file:File|null) {
+    const token=localStorage.getItem('rezantech_session');if(!token)return false;
+    let avatar_url='';
+    if(file){const upload=new FormData();upload.append('image',file);const uploadResponse=await fetch(`${API}/api/upload.php`,{method:'POST',headers:{Authorization:`Bearer ${token}`},body:upload});const uploaded=await uploadResponse.json();if(!uploadResponse.ok){setNotice(uploaded.error||'Could not upload your profile picture.');return false}avatar_url=uploaded.url}
+    const response=await fetch(`${API}/api/profile.php`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({avatar_url})});
+    if(!response.ok){const data=await response.json();setNotice(data.error||'Could not update your profile picture.');return false}
+    const cached=JSON.parse(localStorage.getItem('rezantech_user')||'{}');localStorage.setItem('rezantech_user',JSON.stringify({...cached,avatar_url}));window.dispatchEvent(new CustomEvent('rezantech:profile-updated'));setUser(current=>current?{...current,avatar_url}:current);setNotice(file?'Profile picture updated.':'Profile picture removed.');return true;
   }
 
   async function write(event: FormEvent<HTMLFormElement>) {
@@ -90,7 +103,7 @@ export default function Profile() {
       <section className="profile-cover">
         <div className="cover-pattern"><i/><i/><i/></div>
         <div className="profile-identity">
-          <span className="profile-photo">{user.name[0].toUpperCase()}</span>
+          <span className="profile-photo">{user.avatar_url?<img src={user.avatar_url} alt={`${user.name} profile picture`}/>:user.name[0].toUpperCase()}</span>
           <div>
             <small>REZANTECH COMMUNITY</small>
             <h1>{user.name}</h1>
@@ -140,16 +153,17 @@ export default function Profile() {
         </article>) : <div className="profile-empty"><span><i className="bookmark-icon"/></span><h3>Your reading list is empty.</h3><p>Save stories from the feed and they will appear here.</p><Link href="/">Explore stories</Link></div>}
       </section>}
 
-      {view === 'edit' && <ProfileForm user={user} submit={update} />}
+      {view === 'edit' && <ProfileForm user={user} submit={update} setAvatar={setAvatar} />}
       {view === 'write' && <Writer submit={write} />}
     </div>
   </main>;
 }
 
-function ProfileForm({ user, submit }: { user:User; submit:(event:FormEvent<HTMLFormElement>)=>void }) {
+function ProfileForm({ user, submit, setAvatar }: { user:User; submit:(event:FormEvent<HTMLFormElement>)=>void;setAvatar:(file:File|null)=>Promise<boolean> }) {
   return <form className="profile-form" onSubmit={submit}>
     <span className="kicker">PUBLIC PROFILE</span><h1>Edit your profile</h1>
     <p>This information appears beside your published stories.</p>
+    <AvatarEditor user={user} setAvatar={setAvatar}/>
     <label>Display name<input name="name" defaultValue={user.name} required /></label>
     <div className="profile-form-row"><label>Profession<input name="profession" defaultValue={user.profession} maxLength={120} placeholder="e.g. Product Designer" /></label><label>Location or address<input name="address" defaultValue={user.address} maxLength={255} placeholder="City, region or address" /></label></div>
     <label>Interests<input name="interests" defaultValue={user.interests} maxLength={500} placeholder="Technology, business, culture, health…" /><small>Separate interests with commas.</small></label>
@@ -157,6 +171,14 @@ function ProfileForm({ user, submit }: { user:User; submit:(event:FormEvent<HTML
     <label>Website<input name="website" type="url" defaultValue={user.website} placeholder="https://" /></label>
     <button>Save changes</button>
   </form>;
+}
+
+function AvatarEditor({user,setAvatar}:{user:User;setAvatar:(file:File|null)=>Promise<boolean>}){
+  const [source,setSource]=useState(''),[file,setFile]=useState<File|null>(null),[zoom,setZoom]=useState(1),[busy,setBusy]=useState(false);const input=useRef<HTMLInputElement>(null);
+  function choose(event:ChangeEvent<HTMLInputElement>){const selected=event.target.files?.[0];if(!selected)return;if(selected.size>5*1024*1024){alert('Choose an image smaller than 5 MB.');event.target.value='';return}setFile(selected);setSource(URL.createObjectURL(selected));setZoom(1)}
+  function cancel(){if(source)URL.revokeObjectURL(source);setSource('');setFile(null);setZoom(1);if(input.current)input.current.value=''}
+  async function confirm(){if(!file)return;setBusy(true);try{const bitmap=await createImageBitmap(file);const side=Math.min(bitmap.width,bitmap.height)/zoom;const sx=(bitmap.width-side)/2,sy=(bitmap.height-side)/2;const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512;canvas.getContext('2d')?.drawImage(bitmap,sx,sy,side,side,0,0,512,512);bitmap.close();const blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,'image/jpeg',.9));if(!blob)throw new Error('Could not process image.');const success=await setAvatar(new File([blob],`profile-${Date.now()}.jpg`,{type:'image/jpeg'}));if(success)cancel()}catch(error){alert(error instanceof Error?error.message:'Could not process image.')}finally{setBusy(false)}}
+  return <div className="avatar-editor"><span>{source?<img src={source} alt="Selected profile picture"/>:user.avatar_url?<img src={user.avatar_url} alt="Current profile picture"/>:user.name[0].toUpperCase()}</span><div><b>Profile picture</b><p>Select an image, adjust the crop, then confirm before it is uploaded.</p><label>Choose picture<input ref={input} type="file" accept="image/jpeg,image/png,image/webp" onChange={choose}/></label>{user.avatar_url&&!source&&<button type="button" onClick={()=>setAvatar(null)}>Remove picture</button>}</div>{source&&<div className="avatar-crop"><div className="crop-preview"><img src={source} alt="Crop preview" style={{transform:`scale(${zoom})`}}/></div><label>Crop and zoom<input type="range" min="1" max="2.5" step=".05" value={zoom} onChange={event=>setZoom(Number(event.target.value))}/></label><footer><button type="button" onClick={cancel}>Cancel</button><button type="button" disabled={busy} onClick={confirm}>{busy?'Uploading…':'Set profile picture'}</button></footer></div>}</div>
 }
 
 function Writer({ submit }: { submit:(event:FormEvent<HTMLFormElement>)=>void }) {
