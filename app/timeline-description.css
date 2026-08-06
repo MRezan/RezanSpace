@@ -1,0 +1,81 @@
+.timeline-description {
+  margin: 0 20px 18px;
+}
+
+.timeline-description p {
+  display: inline;
+  color: #687386;
+  font: 14px/1.55 Inter, Arial, sans-serif;
+}
+
+.timeline-description button {
+  margin-left: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #4f5ce5;
+  cursor: pointer;
+  font: 700 13px/1.55 Inter, Arial, sans-serif;
+}
+
+.timeline-description button:hover {
+  text-decoration: underline;
+}
+
+.timeline-description button:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid #aeb8ff;
+  outline-offset: 2px;
+}
+
+.timeline-rich-content {
+  max-height: none;
+  overflow: visible;
+  color: #536174;
+  font: 14.5px/1.65 Inter, Arial, sans-serif;
+  letter-spacing: -.005em;
+}
+
+.timeline-description.expanded .timeline-rich-content {
+  max-height: none;
+}
+
+.timeline-description.rich p,
+.timeline-description.rich div {
+  display: block;
+  margin: 0 0 .85em;
+  color: inherit;
+  font: inherit;
+  white-space: pre-wrap;
+}
+
+.timeline-description.rich p:last-child,
+.timeline-description.rich div:last-child {
+  margin-bottom: 0;
+}
+
+.timeline-description.rich h2,
+.timeline-description.rich h3 {
+  margin: 1em 0 .4em;
+  color: #202b3c;
+  font: 750 17px/1.35 Inter, Arial, sans-serif;
+  letter-spacing: -.018em;
+}
+
+.timeline-description.rich ul,
+.timeline-description.rich ol {
+  margin: .6em 0;
+  padding-left: 22px;
+}
+
+.timeline-description.rich mark {
+  background: #fff1a8;
+}
+
+.timeline-description.rich blockquote {
+  margin: .75em 0;
+  padding-left: 12px;
+  border-left: 3px solid #aeb8ff;
+  color: #596477;
+  font-style: italic;
+}

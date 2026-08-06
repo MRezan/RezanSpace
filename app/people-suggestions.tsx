@@ -16,7 +16,7 @@ export function PeopleSuggestions() {
   }, []);
   return <section><h3>People to follow</h3>{people.map((person,index) => <div className="suggest" key={person.name}>
     <Link className={`avatar a${index}`} href={`/author/?name=${encodeURIComponent(person.name)}`}>{person.name[0]}</Link>
-    <p><Link href={`/author/?name=${encodeURIComponent(person.name)}`}><b>{person.name}</b></Link><small>{person.bio || `${person.post_count} technology stories`}</small></p>
+    <p><Link href={`/author/?name=${encodeURIComponent(person.name)}`}><b>{person.name}</b></Link><small>{person.bio || `${person.post_count} published stories`}</small></p>
     <FollowButton author={person.name} compact/>
   </div>)}</section>;
 }

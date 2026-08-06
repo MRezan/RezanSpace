@@ -9,6 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 $viewer = currentUser($pdo);
 $name = trim((string)($_GET['name'] ?? ''));
+$search = trim((string)($_GET['q'] ?? ''));
 
 if ($name !== '') {
     $personQuery = $pdo->prepare(
@@ -27,7 +28,7 @@ if ($name !== '') {
         $count->execute([$name]);
         $followers = $pdo->prepare('SELECT COUNT(*) FROM author_follows WHERE author_name=?');
         $followers->execute([$name]);
-        $person = ['id'=>null,'name'=>$name,'bio'=>'Community contributor at RezanTech.','website'=>'','avatar_url'=>'','profession'=>'','address'=>'','interests'=>'','created_at'=>null,'post_count'=>(int)$count->fetchColumn(),'follower_count'=>(int)$followers->fetchColumn()];
+        $person = ['id'=>null,'name'=>$name,'bio'=>'Community contributor at REZAN.','website'=>'','avatar_url'=>'','profession'=>'','address'=>'','interests'=>'','created_at'=>null,'post_count'=>(int)$count->fetchColumn(),'follower_count'=>(int)$followers->fetchColumn()];
     }
     $posts = $pdo->prepare(
         'SELECT p.id,p.slug,p.title,p.excerpt,p.image_url,p.author,p.published_at,c.name category_name,
@@ -44,6 +45,28 @@ if ($name !== '') {
         $following = (bool)$check->fetchColumn();
     }
     exit(json_encode(['person'=>$person,'posts'=>$posts->fetchAll(),'following'=>$following]));
+}
+
+if ($search !== '') {
+    $limit = min(max((int)($_GET['limit'] ?? 20), 1), 50);
+    $params = ['%'.$search.'%'];
+    $viewerFilter = '';
+    if ($viewer) {
+        $viewerFilter = 'AND u.id<>?';
+        $params[] = $viewer['id'];
+    }
+    $query = $pdo->prepare(
+        "SELECT u.id,u.name,u.bio,u.avatar_url,
+                (SELECT COUNT(*) FROM posts p WHERE p.author=u.name AND p.status='published') post_count,
+                (SELECT COUNT(*) FROM author_follows f WHERE f.author_name=u.name) follower_count
+         FROM users u
+         WHERE u.name LIKE ? $viewerFilter
+         ORDER BY CASE WHEN LOWER(u.name)=LOWER(?) THEN 0 ELSE 1 END,u.name
+         LIMIT $limit"
+    );
+    $params[] = $search;
+    $query->execute($params);
+    exit(json_encode(['data'=>$query->fetchAll()]));
 }
 
 $limit = min(max((int)($_GET['limit'] ?? 5), 1), 12);

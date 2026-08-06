@@ -1,0 +1,59 @@
+.db-body p,
+.db-body li,
+.db-body blockquote {
+  white-space: pre-wrap;
+}
+
+.seo-story .db-body h2 {
+  margin: 1.65em 0 .6em;
+  color: #172033;
+  font: 800 clamp(24px, 3.2vw, 29px)/1.24 Inter, Arial, sans-serif;
+  letter-spacing: -.03em;
+}
+
+.seo-story .db-body h3 {
+  margin: 1.45em 0 .5em;
+  color: #263247;
+  font: 750 clamp(19px, 2.5vw, 22px)/1.32 Inter, Arial, sans-serif;
+  letter-spacing: -.02em;
+}
+
+.seo-story .db-body p {
+  margin: 0 0 1.15em;
+  color: #344054;
+  font: 18px/1.75 Georgia, serif;
+}
+
+.seo-story .db-body strong,
+.seo-story .db-body b {
+  color: #172033;
+  font-weight: 700;
+}
+
+.seo-story .db-body ul,
+.seo-story .db-body ol {
+  margin: 1.1em 0 1.5em;
+  padding-left: 1.5em;
+}
+
+.seo-story .db-body li {
+  margin: .45em 0;
+  color: #344054;
+  font: 18px/1.68 Georgia, serif;
+}
+
+.db-body blockquote {
+  margin: 1.4em 0;
+  padding: .25em 0 .25em 1.1em;
+  border-left: 4px solid #aeb8ff;
+  color: #596477;
+  font: italic 19px/1.7 Georgia, serif;
+}
+
+@media (max-width: 620px) {
+  .seo-story .db-body p,
+  .seo-story .db-body li {
+    font-size: 17px;
+    line-height: 1.72;
+  }
+}

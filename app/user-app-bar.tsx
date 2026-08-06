@@ -15,6 +15,7 @@ type Notice = {
 };
 
 type Viewer = { name: string; avatar_url?:string } | null;
+function cachedViewer():Viewer{try{const value=localStorage.getItem('rezantech_user');return value?JSON.parse(value):null}catch{localStorage.removeItem('rezantech_user');return null}}
 
 export function UserShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -27,6 +28,7 @@ export function UserAppBar() {
   const activePath = pathname === '/' ? '/' : pathname.replace(/\/+$/, '');
   const router = useRouter();
   const searchInput = useRef<HTMLInputElement>(null);
+  const appActions = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState('');
   const [viewer, setViewer] = useState<Viewer>(null);
   const [menu, setMenu] = useState(false);
@@ -34,8 +36,7 @@ export function UserAppBar() {
   const [notices, setNotices] = useState<Notice[]>([]);
 
   useEffect(() => {
-    const cached = localStorage.getItem('rezantech_user');
-    setViewer(cached ? JSON.parse(cached) : null);
+    setViewer(cachedViewer());
     const token = localStorage.getItem('rezantech_session');
     if (!token) return;
     fetch(`${API}/api/auth.php?action=me`, { headers:{ Authorization:`Bearer ${token}` } }).then(r=>r.ok?r.json():null).then(data=>{if(data?.user){setViewer(data.user);localStorage.setItem('rezantech_user',JSON.stringify(data.user))}});
@@ -44,7 +45,7 @@ export function UserAppBar() {
       .then(data => data && setNotices(data.notifications || []));
   }, [pathname]);
 
-  useEffect(()=>{function refresh(){const cached=localStorage.getItem('rezantech_user');setViewer(cached?JSON.parse(cached):null)}window.addEventListener('rezantech:profile-updated',refresh);return()=>window.removeEventListener('rezantech:profile-updated',refresh)},[]);
+  useEffect(()=>{function refresh(){setViewer(cachedViewer())}window.addEventListener('rezantech:profile-updated',refresh);return()=>window.removeEventListener('rezantech:profile-updated',refresh)},[]);
 
   useEffect(() => {
     function shortcut(event: KeyboardEvent) {
@@ -56,6 +57,17 @@ export function UserAppBar() {
     }
     window.addEventListener('keydown', shortcut);
     return () => window.removeEventListener('keydown', shortcut);
+  }, []);
+
+  useEffect(() => {
+    function closeMenus(event: PointerEvent) {
+      if (!appActions.current?.contains(event.target as Node)) {
+        setMenu(false);
+        setNoticesOpen(false);
+      }
+    }
+    document.addEventListener('pointerdown', closeMenus);
+    return () => document.removeEventListener('pointerdown', closeMenus);
   }, []);
 
   const unread = notices.filter(notice => !notice.read_at).length;
@@ -86,20 +98,25 @@ export function UserAppBar() {
 
   async function logout() {
     const token = localStorage.getItem('rezantech_session');
-    if (token) await fetch(`${API}/api/auth.php?action=logout`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    localStorage.removeItem('rezantech_session');
-    localStorage.removeItem('rezantech_user');
-    router.push('/');
-    router.refresh();
+    setMenu(false);
+    try {
+      if (token) await fetch(`${API}/api/auth.php?action=logout`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } finally {
+      localStorage.removeItem('rezantech_session');
+      localStorage.removeItem('rezantech_user');
+      setViewer(null);
+      router.push('/');
+      router.refresh();
+    }
   }
 
   return <header className="social-top upgraded user-appbar">
     <div className="app-brand">
-      <Link href="/" className="social-logo">R</Link>
-      <Link href="/" className="app-wordmark">Rezan<span>Tech</span></Link>
+      <Link href="/" className="social-logo" aria-label="REZAN home"><img src="/favicon.svg" alt=""/></Link>
+      <Link href="/" className="app-wordmark">REZAN</Link>
     </div>
     <form className="app-search" onSubmit={search}>
       <span>⌕</span>
@@ -111,7 +128,7 @@ export function UserAppBar() {
       <Link className={activePath.startsWith('/discover') ? 'active' : ''} href="/discover">◈<small>Discover</small></Link>
       <Link className={activePath.startsWith('/library') ? 'active' : ''} href={viewer ? '/library' : '/account'}>♧<small>Library</small></Link>
     </nav>
-    <div className="app-actions">
+    <div className="app-actions" ref={appActions}>
       <button className="notice" aria-label="Notifications" onClick={toggleNotices}>
         <span className="bell-shape">●</span>
         {unread > 0 && <i>{unread > 9 ? '9+' : unread}</i>}
@@ -125,7 +142,7 @@ export function UserAppBar() {
       <button className="account-trigger" onClick={() => { setMenu(!menu); setNoticesOpen(false); }}>
         <span className="social-avatar">{viewer?.avatar_url?<img src={viewer.avatar_url} alt=""/>:initial}</span><b>{viewer?.name || 'Account'}</b><em>⌄</em>
       </button>
-      {menu && <div className="account-menu">
+      {menu && <div className="account-menu" onClick={() => setMenu(false)}>
         <div><span className="social-avatar">{viewer?.avatar_url?<img src={viewer.avatar_url} alt=""/>:initial}</span><p><b>{viewer?.name || 'Guest reader'}</b><small>{viewer ? 'View your profile' : 'Sign in to personalize'}</small></p></div>
         <Link href={viewer ? '/profile' : '/account'}>◎ Profile</Link>
         <Link href={viewer ? '/library' : '/account'}>♧ Saved posts</Link>

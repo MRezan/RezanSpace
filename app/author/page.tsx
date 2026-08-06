@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Suspense, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { FollowButton } from '../follow-button';
 import { LikeButton } from '../like-button';
 import { SaveButton } from '../save-button';
@@ -15,24 +15,26 @@ export default function Page(){return <Suspense fallback={<main className="autho
 
 function AuthorProfile() {
   const name = useSearchParams().get('name') || '';
+  const router=useRouter();
   const [person, setPerson] = useState<Person|null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [following, setFollowing] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    try{const cached=JSON.parse(localStorage.getItem('rezantech_user')||'null');if(cached?.name?.trim().toLowerCase()===name.trim().toLowerCase()){router.replace('/profile');return}}catch{localStorage.removeItem('rezantech_user')}
     const token = localStorage.getItem('rezantech_session');
     fetch(`${API}/api/people.php?name=${encodeURIComponent(name)}`, { headers:token ? { Authorization:`Bearer ${token}` } : {} })
       .then(async response => { if (!response.ok) throw new Error('This writer could not be found.'); return response.json(); })
       .then(data => { setPerson(data.person); setPosts(data.posts || []); setFollowing(Boolean(data.following)); })
       .catch(reason => setError(reason.message));
-  }, [name]);
+  }, [name,router]);
 
   if (error) return <main className="author-loading"><h1>Writer not found</h1><p>{error}</p><Link href="/">Return home</Link></main>;
   if (!person) return <main className="author-loading">Loading writer…</main>;
 
   return <main className="author-page">
-    <section className="author-hero"><div className="author-cover"><i/><i/></div><div className="author-identity"><span>{person.avatar_url?<img src={person.avatar_url} alt={`${person.name} profile picture`}/>:person.name[0]}</span><div><small>{person.profession||'REZANTECH CONTRIBUTOR'}</small><h1>{person.name}</h1><p>{person.bio || 'Community contributor sharing useful ideas with RezanTech readers.'}</p>{person.address&&<em className="author-location">⌖ {person.address}</em>}<footer><b>{person.post_count}</b> stories <b>{person.follower_count}</b> followers {person.website && <a href={person.website} target="_blank" rel="noreferrer">↗ Website</a>}</footer></div><FollowButton author={person.name} initial={following}/></div></section>
-    <div className="author-content"><section><header><div><small>PUBLISHED WORK</small><h2>Stories by {person.name}</h2></div><span>{posts.length} stories</span></header>{posts.length ? <div className="author-posts">{posts.map(post => <article key={post.id}><Link className="author-post-image" href={`/post/${post.slug}`}>{post.image_url ? <img src={post.image_url} alt={post.title}/> : <span>{post.title[0]}</span>}</Link><div><small>{post.category_name}</small><Link href={`/post/${post.slug}`}><h3>{post.title}</h3><p>{post.excerpt}</p></Link><footer><span>{new Date(post.published_at).toLocaleDateString()}</span><div><LikeButton slug={post.slug} initialCount={post.like_count} compact/><SaveButton slug={post.slug} compact/></div></footer></div></article>)}</div> : <div className="author-empty">No published stories yet.</div>}</section><aside><h3>About the writer</h3><p>{person.bio || 'Technology contributor at RezanTech.'}</p>{person.profession&&<strong>{person.profession}</strong>}{person.interests&&<div className="author-interests">{person.interests.split(',').filter(Boolean).map(item=><span key={item}>{item.trim()}</span>)}</div>}{person.created_at && <small>Community member since {new Date(person.created_at).getFullYear()}</small>}<Link href="/discover">Discover more writers →</Link></aside></div>
+    <section className="author-hero"><div className="author-cover"><i/><i/></div><div className="author-identity"><span>{person.avatar_url?<img src={person.avatar_url} alt={`${person.name} profile picture`}/>:person.name[0]}</span><div><small>{person.profession||'REZAN CONTRIBUTOR'}</small><h1>{person.name}</h1><p>{person.bio || 'Community contributor sharing useful ideas with REZAN readers.'}</p>{person.address&&<em className="author-location">⌖ {person.address}</em>}<footer><b>{person.post_count}</b> stories <b>{person.follower_count}</b> followers {person.website && <a href={person.website} target="_blank" rel="noreferrer">↗ Website</a>}</footer></div><FollowButton author={person.name} initial={following}/></div></section>
+    <div className="author-content"><section><header><div><small>PUBLISHED WORK</small><h2>Stories by {person.name}</h2></div><span>{posts.length} stories</span></header>{posts.length ? <div className="author-posts">{posts.map(post => <article className="author-post-card" key={post.id} role="link" tabIndex={0} onClick={()=>router.push(`/post/${post.slug}`)} onKeyDown={event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();router.push(`/post/${post.slug}`)}}}><div className="author-post-image">{post.image_url ? <img src={post.image_url} alt={post.title}/> : <span>{post.title[0]}</span>}</div><div><small>{post.category_name}</small><h3>{post.title}</h3><p>{post.excerpt.length>240?`${post.excerpt.slice(0,240).trimEnd()}…`:post.excerpt}</p><footer><span>{new Date(post.published_at).toLocaleDateString()}</span><div onClick={event=>event.stopPropagation()}><LikeButton slug={post.slug} initialCount={post.like_count} compact/><SaveButton slug={post.slug} compact/></div></footer></div></article>)}</div> : <div className="author-empty">No published stories yet.</div>}</section><aside><h3>About the writer</h3><p>{person.bio || 'Community writer at REZAN.'}</p>{person.profession&&<strong>{person.profession}</strong>}{person.interests&&<div className="author-interests">{person.interests.split(',').filter(Boolean).map(item=><span key={item}>{item.trim()}</span>)}</div>}{person.created_at && <small>Community member since {new Date(person.created_at).getFullYear()}</small>}<Link href="/discover">Discover more writers →</Link></aside></div>
   </main>;
 }

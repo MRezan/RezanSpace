@@ -5,11 +5,12 @@ import { ChangeEvent, FormEvent, useCallback, useEffect, useRef, useState } from
 import { useRouter } from 'next/navigation';
 import { posts as allStories } from '../posts';
 import { categories } from '../categories';
+import { RichTextEditor } from '../rich-text-editor';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
-type View = 'home' | 'edit' | 'write' | 'library';
+type View = 'home' | 'edit' | 'write' | 'library' | 'editStory';
 type User = { id:number; name:string; email:string; bio:string; website:string; avatar_url:string; profession:string; address:string; interests:string; role:string; created_at:string };
-type UserPost = { id:number; title:string; excerpt:string; status:string; created_at:string };
+type UserPost = { id:number; slug:string; title:string; excerpt:string; content:string; category_name:string; status:string; created_at:string };
 
 export default function Profile() {
   const [user, setUser] = useState<User | null>(null);
@@ -18,6 +19,9 @@ export default function Profile() {
   const [view, setView] = useState<View>('home');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(true);
+  const [editingPost,setEditingPost]=useState<UserPost|null>(null);
+  const [deletingPost,setDeletingPost]=useState<number|null>(null);
+  const [savePhase,setSavePhase]=useState<'idle'|'saving'|'success'|'error'>('idle');
   const router = useRouter();
 
   const load = useCallback(async () => {
@@ -53,7 +57,7 @@ export default function Profile() {
       body: JSON.stringify(Object.fromEntries(formData)),
     });
     if (response.ok) {
-      const cached = JSON.parse(localStorage.getItem('rezantech_user') || '{}');
+      let cached={};try{cached=JSON.parse(localStorage.getItem('rezantech_user')||'{}')}catch{localStorage.removeItem('rezantech_user')}
       localStorage.setItem('rezantech_user', JSON.stringify({ ...cached, name:formData.get('name') }));
       window.dispatchEvent(new CustomEvent('rezantech:profile-updated'));
       setNotice('Your profile was updated.');
@@ -68,7 +72,7 @@ export default function Profile() {
     if(file){const upload=new FormData();upload.append('image',file);const uploadResponse=await fetch(`${API}/api/upload.php`,{method:'POST',headers:{Authorization:`Bearer ${token}`},body:upload});const uploaded=await uploadResponse.json();if(!uploadResponse.ok){setNotice(uploaded.error||'Could not upload your profile picture.');return false}avatar_url=uploaded.url}
     const response=await fetch(`${API}/api/profile.php`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({avatar_url})});
     if(!response.ok){const data=await response.json();setNotice(data.error||'Could not update your profile picture.');return false}
-    const cached=JSON.parse(localStorage.getItem('rezantech_user')||'{}');localStorage.setItem('rezantech_user',JSON.stringify({...cached,avatar_url}));window.dispatchEvent(new CustomEvent('rezantech:profile-updated'));setUser(current=>current?{...current,avatar_url}:current);setNotice(file?'Profile picture updated.':'Profile picture removed.');return true;
+    let cached={};try{cached=JSON.parse(localStorage.getItem('rezantech_user')||'{}')}catch{localStorage.removeItem('rezantech_user')}localStorage.setItem('rezantech_user',JSON.stringify({...cached,avatar_url}));window.dispatchEvent(new CustomEvent('rezantech:profile-updated'));setUser(current=>current?{...current,avatar_url}:current);setNotice(file?'Profile picture updated.':'Profile picture removed.');return true;
   }
 
   async function write(event: FormEvent<HTMLFormElement>) {
@@ -89,6 +93,9 @@ export default function Profile() {
     } else setNotice(data.error);
   }
 
+  async function editStory(event:FormEvent<HTMLFormElement>){event.preventDefault();if(!editingPost||savePhase==='saving')return;setSavePhase('saving');const token=localStorage.getItem('rezantech_session');try{const response=await fetch(`${API}/api/user-posts.php`,{method:'PUT',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({id:editingPost.id,...Object.fromEntries(new FormData(event.currentTarget))})});const data=await response.json();if(!response.ok){setNotice(data.error||'Could not update your post.');setSavePhase('error');return}setSavePhase('success');setNotice(data.message);await new Promise(resolve=>window.setTimeout(resolve,850));await load();setEditingPost(null);setSavePhase('idle');setView('home')}catch{setNotice('Could not update your post. Check your connection and try again.');setSavePhase('error')}}
+  async function deleteStory(post:UserPost){if(!window.confirm(`Delete “${post.title}”? This cannot be undone.`))return;setDeletingPost(post.id);const token=localStorage.getItem('rezantech_session');try{const response=await fetch(`${API}/api/user-posts.php?id=${post.id}`,{method:'DELETE',headers:{Authorization:`Bearer ${token}`}});const data=await response.json();setNotice(data.message||data.error);if(response.ok)setPosts(current=>current.filter(item=>item.id!==post.id))}finally{setDeletingPost(null)}}
+
   if (loading) return <main className="profile-loading"><i/><p>Preparing your profile…</p></main>;
   if (!user) return null;
 
@@ -105,7 +112,7 @@ export default function Profile() {
         <div className="profile-identity">
           <span className="profile-photo">{user.avatar_url?<img src={user.avatar_url} alt={`${user.name} profile picture`}/>:user.name[0].toUpperCase()}</span>
           <div>
-            <small>REZANTECH COMMUNITY</small>
+            <small>REZAN COMMUNITY</small>
             <h1>{user.name}</h1>
             <p>{user.profession ? `${user.profession}${user.address ? ` · ${user.address}` : ''}` : user.bio || 'Reader, independent thinker and community contributor.'}</p>
           </div>
@@ -127,10 +134,10 @@ export default function Profile() {
             <button onClick={() => setView('write')}>＋ New story</button>
           </div>
           <div className="profile-story-list">
-            {posts.length ? posts.map(post => <article key={post.id}>
+            {posts.length ? posts.map(post => <article key={post.id} className={post.status==='published'?'clickable':''} role={post.status==='published'?'link':undefined} tabIndex={post.status==='published'?0:undefined} onClick={()=>post.status==='published'&&router.push(`/post/${post.slug}`)} onKeyDown={event=>{if(post.status==='published'&&(event.key==='Enter'||event.key===' ')){event.preventDefault();router.push(`/post/${post.slug}`)}}}>
               <span className="story-letter">{post.title[0]}</span>
-              <div><h3>{post.title}</h3><p>{post.excerpt}</p><small>{new Date(post.created_at).toLocaleDateString()}</small></div>
-              <b className={`status ${post.status}`}>{post.status}</b>
+              <div className="profile-story-copy"><h3>{post.title}</h3><p>{post.excerpt.length>240?`${post.excerpt.slice(0,240).trimEnd()}…`:post.excerpt}</p><small>{new Date(post.created_at).toLocaleDateString()}</small></div>
+              <div className="profile-story-actions"><b className={`status ${post.status}`}>{post.status}</b><div><button type="button" onClick={event=>{event.stopPropagation();setSavePhase('idle');setEditingPost(post);setView('editStory')}}>✎ Edit</button><button type="button" className="delete-post" disabled={deletingPost===post.id} onClick={event=>{event.stopPropagation();deleteStory(post)}}>{deletingPost===post.id?'Deleting…':'Delete'}</button></div></div>
             </article>) : <div className="profile-empty">
               <span>✦</span><h3>Your byline starts here.</h3>
               <p>Share an original story, useful experience or informed perspective with the community.</p>
@@ -155,8 +162,13 @@ export default function Profile() {
 
       {view === 'edit' && <ProfileForm user={user} submit={update} setAvatar={setAvatar} />}
       {view === 'write' && <Writer submit={write} />}
+      {view === 'editStory' && editingPost && <StoryEditor post={editingPost} submit={editStory} phase={savePhase} cancel={()=>{setEditingPost(null);setSavePhase('idle');setView('home')}}/>}
     </div>
   </main>;
+}
+
+function StoryEditor({post,submit,cancel,phase}:{post:UserPost;submit:(event:FormEvent<HTMLFormElement>)=>void;cancel:()=>void;phase:'idle'|'saving'|'success'|'error'}){
+ return <form className={`writer-form story-editor save-${phase}`} onSubmit={submit}><div><span className="kicker">EDIT STORY</span><h1>Improve your post.</h1><p>Update the headline, summary, category or formatted article text.</p></div><label>Headline<input name="title" required defaultValue={post.title}/></label><label>Category<select name="category" defaultValue={post.category_name}>{categories.map(category=><option key={category}>{category}</option>)}</select></label><label>Summary<textarea name="excerpt" required rows={3} defaultValue={post.excerpt}/></label><label>Story<RichTextEditor name="content" initialValue={post.content} placeholder="Write your complete article…"/></label><aside><button type="button" className="edit-cancel" disabled={phase==='saving'||phase==='success'} onClick={cancel}>Cancel</button><button className="animated-save" disabled={phase==='saving'||phase==='success'}><span className="save-idle">Save changes</span><span className="save-saving"><i/>Saving your update…</span><span className="save-success"><i>✓</i>Updated successfully</span></button></aside></form>;
 }
 
 function ProfileForm({ user, submit, setAvatar }: { user:User; submit:(event:FormEvent<HTMLFormElement>)=>void;setAvatar:(file:File|null)=>Promise<boolean> }) {

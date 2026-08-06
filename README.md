@@ -1,4 +1,4 @@
-# RezanTech
+# REZAN
 
 A technology publication built with Next.js 16, React, TypeScript and Tailwind CSS. The frontend exports to static files for Firebase Hosting. Content administration connects to a separate raw PHP + MySQL API intended to run on localhost during development.
 

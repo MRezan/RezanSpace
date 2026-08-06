@@ -1,4 +1,4 @@
-# RezanTech local API
+# REZAN local API
 
 1. Import `database.sql`, then `auth-migration.sql` and `comments-migration.sql` into MySQL.
 2. Copy `config.example.php` to `config.php` and update the credentials/token.
