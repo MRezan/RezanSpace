@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { posts as allStories } from '../posts';
 import { categories } from '../categories';
 import { RichTextEditor } from '../rich-text-editor';
+import {useConfirmDialog} from '../confirm-dialog';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 type View = 'home' | 'edit' | 'write' | 'library' | 'editStory';
@@ -22,6 +23,7 @@ export default function Profile() {
   const [editingPost,setEditingPost]=useState<UserPost|null>(null);
   const [deletingPost,setDeletingPost]=useState<number|null>(null);
   const [savePhase,setSavePhase]=useState<'idle'|'saving'|'success'|'error'>('idle');
+  const {confirmAction,confirmationDialog}=useConfirmDialog();
   const router = useRouter();
 
   const load = useCallback(async () => {
@@ -94,7 +96,7 @@ export default function Profile() {
   }
 
   async function editStory(event:FormEvent<HTMLFormElement>){event.preventDefault();if(!editingPost||savePhase==='saving')return;setSavePhase('saving');const token=localStorage.getItem('rezantech_session');try{const response=await fetch(`${API}/api/user-posts.php`,{method:'PUT',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({id:editingPost.id,...Object.fromEntries(new FormData(event.currentTarget))})});const data=await response.json();if(!response.ok){setNotice(data.error||'Could not update your post.');setSavePhase('error');return}setSavePhase('success');setNotice(data.message);await new Promise(resolve=>window.setTimeout(resolve,850));await load();setEditingPost(null);setSavePhase('idle');setView('home')}catch{setNotice('Could not update your post. Check your connection and try again.');setSavePhase('error')}}
-  async function deleteStory(post:UserPost){if(!window.confirm(`Delete “${post.title}”? This cannot be undone.`))return;setDeletingPost(post.id);const token=localStorage.getItem('rezantech_session');try{const response=await fetch(`${API}/api/user-posts.php?id=${post.id}`,{method:'DELETE',headers:{Authorization:`Bearer ${token}`}});const data=await response.json();setNotice(data.message||data.error);if(response.ok)setPosts(current=>current.filter(item=>item.id!==post.id))}finally{setDeletingPost(null)}}
+  async function deleteStory(post:UserPost){if(!await confirmAction({title:'Delete this story?',message:`“${post.title}” will be permanently removed. This action cannot be undone.`,confirmLabel:'Delete story',tone:'danger'}))return;setDeletingPost(post.id);const token=localStorage.getItem('rezantech_session');try{const response=await fetch(`${API}/api/user-posts.php?id=${post.id}`,{method:'DELETE',headers:{Authorization:`Bearer ${token}`}});const data=await response.json();setNotice(data.message||data.error);if(response.ok)setPosts(current=>current.filter(item=>item.id!==post.id))}finally{setDeletingPost(null)}}
 
   if (loading) return <main className="profile-loading"><i/><p>Preparing your profile…</p></main>;
   if (!user) return null;
@@ -104,6 +106,7 @@ export default function Profile() {
   const pending = posts.filter(post => post.status !== 'published').length;
 
   return <main className="profile-page profile-v2">
+    {confirmationDialog}
     <div className="profile-content">
       {notice && <div className="cms-notice">{notice}<button onClick={() => setNotice('')}>×</button></div>}
 
@@ -186,11 +189,11 @@ function ProfileForm({ user, submit, setAvatar }: { user:User; submit:(event:For
 }
 
 function AvatarEditor({user,setAvatar}:{user:User;setAvatar:(file:File|null)=>Promise<boolean>}){
-  const [source,setSource]=useState(''),[file,setFile]=useState<File|null>(null),[zoom,setZoom]=useState(1),[busy,setBusy]=useState(false);const input=useRef<HTMLInputElement>(null);
-  function choose(event:ChangeEvent<HTMLInputElement>){const selected=event.target.files?.[0];if(!selected)return;if(selected.size>5*1024*1024){alert('Choose an image smaller than 5 MB.');event.target.value='';return}setFile(selected);setSource(URL.createObjectURL(selected));setZoom(1)}
+  const [source,setSource]=useState(''),[file,setFile]=useState<File|null>(null),[zoom,setZoom]=useState(1),[busy,setBusy]=useState(false),[error,setError]=useState('');const input=useRef<HTMLInputElement>(null);
+  function choose(event:ChangeEvent<HTMLInputElement>){const selected=event.target.files?.[0];if(!selected)return;setError('');if(selected.size>5*1024*1024){setError('Choose an image smaller than 5 MB.');event.target.value='';return}setFile(selected);setSource(URL.createObjectURL(selected));setZoom(1)}
   function cancel(){if(source)URL.revokeObjectURL(source);setSource('');setFile(null);setZoom(1);if(input.current)input.current.value=''}
-  async function confirm(){if(!file)return;setBusy(true);try{const bitmap=await createImageBitmap(file);const side=Math.min(bitmap.width,bitmap.height)/zoom;const sx=(bitmap.width-side)/2,sy=(bitmap.height-side)/2;const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512;canvas.getContext('2d')?.drawImage(bitmap,sx,sy,side,side,0,0,512,512);bitmap.close();const blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,'image/jpeg',.9));if(!blob)throw new Error('Could not process image.');const success=await setAvatar(new File([blob],`profile-${Date.now()}.jpg`,{type:'image/jpeg'}));if(success)cancel()}catch(error){alert(error instanceof Error?error.message:'Could not process image.')}finally{setBusy(false)}}
-  return <div className="avatar-editor"><span>{source?<img src={source} alt="Selected profile picture"/>:user.avatar_url?<img src={user.avatar_url} alt="Current profile picture"/>:user.name[0].toUpperCase()}</span><div><b>Profile picture</b><p>Select an image, adjust the crop, then confirm before it is uploaded.</p><label>Choose picture<input ref={input} type="file" accept="image/jpeg,image/png,image/webp" onChange={choose}/></label>{user.avatar_url&&!source&&<button type="button" onClick={()=>setAvatar(null)}>Remove picture</button>}</div>{source&&<div className="avatar-crop"><div className="crop-preview"><img src={source} alt="Crop preview" style={{transform:`scale(${zoom})`}}/></div><label>Crop and zoom<input type="range" min="1" max="2.5" step=".05" value={zoom} onChange={event=>setZoom(Number(event.target.value))}/></label><footer><button type="button" onClick={cancel}>Cancel</button><button type="button" disabled={busy} onClick={confirm}>{busy?'Uploading…':'Set profile picture'}</button></footer></div>}</div>
+  async function applyAvatar(){if(!file)return;setBusy(true);setError('');try{const bitmap=await createImageBitmap(file);const side=Math.min(bitmap.width,bitmap.height)/zoom;const sx=(bitmap.width-side)/2,sy=(bitmap.height-side)/2;const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512;canvas.getContext('2d')?.drawImage(bitmap,sx,sy,side,side,0,0,512,512);bitmap.close();const blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,'image/jpeg',.9));if(!blob)throw new Error('Could not process image.');const success=await setAvatar(new File([blob],`profile-${Date.now()}.jpg`,{type:'image/jpeg'}));if(success)cancel()}catch(caught){setError(caught instanceof Error?caught.message:'Could not process image.')}finally{setBusy(false)}}
+  return <div className="avatar-editor"><span>{source?<img src={source} alt="Selected profile picture"/>:user.avatar_url?<img src={user.avatar_url} alt="Current profile picture"/>:user.name[0].toUpperCase()}</span><div><b>Profile picture</b><p>Select an image, adjust the crop, then confirm before it is uploaded.</p><label>Choose picture<input ref={input} type="file" accept="image/jpeg,image/png,image/webp" onChange={choose}/></label>{user.avatar_url&&!source&&<button type="button" onClick={()=>setAvatar(null)}>Remove picture</button>}{error&&<p className="avatar-error" role="alert">{error}</p>}</div>{source&&<div className="avatar-crop"><div className="crop-preview"><img src={source} alt="Crop preview" style={{transform:`scale(${zoom})`}}/></div><label>Crop and zoom<input type="range" min="1" max="2.5" step=".05" value={zoom} onChange={event=>setZoom(Number(event.target.value))}/></label><footer><button type="button" onClick={cancel}>Cancel</button><button type="button" disabled={busy} onClick={applyAvatar}>{busy?'Uploading…':'Set profile picture'}</button></footer></div>}</div>
 }
 
 function Writer({ submit }: { submit:(event:FormEvent<HTMLFormElement>)=>void }) {

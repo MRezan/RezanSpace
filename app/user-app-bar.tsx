@@ -8,13 +8,14 @@ const API = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 type Notice = {
   id: number;
+  type: string;
   message: string;
   link: string;
   read_at: string | null;
   created_at: string;
 };
 
-type Viewer = { name: string; avatar_url?:string } | null;
+type Viewer = { name: string; avatar_url?:string; role?:'user'|'editor'|'admin' } | null;
 function cachedViewer():Viewer{try{const value=localStorage.getItem('rezantech_user');return value?JSON.parse(value):null}catch{localStorage.removeItem('rezantech_user');return null}}
 
 export function UserShell({ children }: { children: ReactNode }) {
@@ -79,21 +80,23 @@ export function UserAppBar() {
     if (value) router.push(`/search/?q=${encodeURIComponent(value)}`);
   }
 
-  async function toggleNotices() {
-    const next = !noticesOpen;
-    setNoticesOpen(next);
+  function toggleNotices() {
+    setNoticesOpen(!noticesOpen);
     setMenu(false);
-    if (!next || !unread) return;
+  }
+
+  function noticeHref(link:string){return link.startsWith('/article/')?`${link.replace('/article/','/post/').replace(/\/$/,'')}/#discussion`:link||'/'}
+
+  function setNoticeRead(id:number,read:boolean) {
     const token = localStorage.getItem('rezantech_session');
     if (!token) return;
-    await fetch(`${API}/api/library.php`, {
+    setNotices(current=>current.map(notice=>notice.id===id?{...notice,read_at:read?new Date().toISOString():null}:notice));
+    fetch(`${API}/api/library.php`, {
       method: 'PUT',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type':'application/json' },
+      body:JSON.stringify({id,read}),
+      keepalive:true,
     });
-    setNotices(current => current.map(notice => ({
-      ...notice,
-      read_at: notice.read_at || new Date().toISOString(),
-    })));
   }
 
   async function logout() {
@@ -134,10 +137,10 @@ export function UserAppBar() {
         {unread > 0 && <i>{unread > 9 ? '9+' : unread}</i>}
       </button>
       {noticesOpen && <div className="notifications-menu">
-        <header><h3>Notifications</h3><span>{unread ? 'Marked as read' : 'All caught up'}</span></header>
-        {notices.length ? notices.slice(0, 8).map(notice => <Link href={notice.link || '/'} key={notice.id}>
-          <b>◯</b><p>{notice.message}<small>{new Date(notice.created_at).toLocaleString()}</small></p>
-        </Link>) : <div className="empty-notices"><b>🔔</b><p>No notifications yet.</p><small>Comments and publishing updates will appear here.</small></div>}
+        <header><h3>Notifications</h3><span>{unread?`${unread} unread`:'All caught up'}</span></header>
+        {notices.length ? notices.slice(0, 8).map(notice => <div className={`notification-row ${notice.read_at?'is-read':'is-unread'}`} key={notice.id}><Link href={noticeHref(notice.link)} onClick={()=>{setNoticeRead(notice.id,true);setNoticesOpen(false)}}>
+          <b className={`notification-type ${notice.type}`} aria-hidden="true"><i/></b><p>{notice.message}<small>{notice.type==='comment'?'New comment':'Notification'} · {new Date(notice.created_at).toLocaleString()}</small></p>
+        </Link><button onClick={()=>setNoticeRead(notice.id,!Boolean(notice.read_at))}>{notice.read_at?'Mark unread':'Mark read'}</button></div>) : <div className="empty-notices"><b>🔔</b><p>No notifications yet.</p><small>Comments and publishing updates will appear here.</small></div>}
       </div>}
       <button className="account-trigger" onClick={() => { setMenu(!menu); setNoticesOpen(false); }}>
         <span className="social-avatar">{viewer?.avatar_url?<img src={viewer.avatar_url} alt=""/>:initial}</span><b>{viewer?.name || 'Account'}</b><em>⌄</em>
@@ -147,6 +150,7 @@ export function UserAppBar() {
         <Link href={viewer ? '/profile' : '/account'}>◎ Profile</Link>
         <Link href={viewer ? '/library' : '/account'}>♧ Saved posts</Link>
         {viewer && <Link href="/">✎ Create from timeline</Link>}
+        {viewer&&(viewer.role==='admin'||viewer.role==='editor')&&<Link href="/admin">▦ Editorial workspace</Link>}
         <hr />
         {viewer ? <button onClick={logout}>↗ Sign out</button> : <Link href="/account">→ Sign in</Link>}
       </div>}

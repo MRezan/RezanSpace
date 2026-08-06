@@ -15,18 +15,24 @@ export function Comments({ slug }: { slug:string }) {
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [sort, setSort] = useState<'newest' | 'oldest'>('newest');
+  const [page,setPage]=useState(1);
+  const [hasMore,setHasMore]=useState(false);
+  const [total,setTotal]=useState(0);
+  const [loadingMore,setLoadingMore]=useState(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (nextPage=1,append=false) => {
+    if(append)setLoadingMore(true);
     try {
       const token = localStorage.getItem('rezantech_session');
-      const response = await fetch(`${API}/api/comments.php?slug=${encodeURIComponent(slug)}`, {
+      const response = await fetch(`${API}/api/comments.php?slug=${encodeURIComponent(slug)}&page=${nextPage}&limit=20`, {
         headers: token ? { Authorization:`Bearer ${token}` } : {},
       });
       const data = await response.json();
-      setComments(data.data || []);
+      setComments(current=>append?[...current,...(data.data||[])]:data.data||[]);
       setViewer(data.viewer || null);
-      window.dispatchEvent(new CustomEvent('rezantech:engagement', { detail:{ slug, comments:(data.data || []).length } }));
-    } finally { setLoading(false); }
+      setPage(nextPage);setHasMore(Boolean(data.pagination?.has_more));setTotal(Number(data.pagination?.total||0));
+      window.dispatchEvent(new CustomEvent('rezantech:engagement', { detail:{ slug, comments:Number(data.pagination?.total??(data.data||[]).length) } }));
+    } finally { setLoading(false);setLoadingMore(false); }
   }, [slug]);
 
   useEffect(() => { load(); }, [load]);
@@ -71,7 +77,7 @@ export function Comments({ slug }: { slug:string }) {
 
   return <section className="comments comments-v2">
     <header className="comments-head">
-      <div><span className="comments-kicker"><i className="comment-icon"/>DISCUSSION</span><h2>Join the conversation</h2><p>{comments.length} {comments.length === 1 ? 'comment' : 'comments'} from the community</p></div>
+      <div><span className="comments-kicker"><i className="comment-icon"/>DISCUSSION</span><h2>Join the conversation</h2><p>{total} {total === 1 ? 'comment' : 'comments'} from the community</p></div>
       {comments.length > 1 && <label className="comment-sort">Sort by<select value={sort} onChange={event => setSort(event.target.value as 'newest' | 'oldest')}><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select></label>}
     </header>
 
@@ -95,5 +101,6 @@ export function Comments({ slug }: { slug:string }) {
         </div>
       </article>) : <div className="no-comments"><span><i className="comment-icon"/></span><b>Start the conversation.</b><p>Be the first to leave a thoughtful response to this story.</p></div>}
     </div>
+    {hasMore&&<button className="comments-load-more" disabled={loadingMore} onClick={()=>load(page+1,true)}>{loadingMore?'Loading more…':'Load more comments'}</button>}
   </section>;
 }

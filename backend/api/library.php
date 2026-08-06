@@ -27,8 +27,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
-    $query = $pdo->prepare('UPDATE notifications SET read_at=NOW() WHERE user_id=?');
-    $query->execute([$user['id']]);
+    $data=input();
+    $notificationId=(int)($data['id']??0);
+    if($notificationId){$read=($data['read']??true)!==false;$query=$pdo->prepare('UPDATE notifications SET read_at='.($read?'NOW()':'NULL').' WHERE id=? AND user_id=?');$query->execute([$notificationId,$user['id']]);}
+    else{$query=$pdo->prepare('UPDATE notifications SET read_at=NOW() WHERE user_id=?');$query->execute([$user['id']]);}
     exit(json_encode(['ok' => true]));
 }
 
