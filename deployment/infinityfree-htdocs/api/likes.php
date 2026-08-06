@@ -1,0 +1,10 @@
+<?php
+declare(strict_types=1);
+require dirname(__DIR__).'/bootstrap.php';
+$data=input();$slug=slugify($_GET['slug']??($data['slug']??''));
+if($slug===''){http_response_code(422);exit(json_encode(['error'=>'Post slug required.']));}
+function reactionState(PDO $pdo,string $slug,array|false $user):array{$likes=$pdo->prepare('SELECT COUNT(*) FROM post_likes WHERE post_slug=?');$likes->execute([$slug]);$dislikes=$pdo->prepare('SELECT COUNT(*) FROM post_dislikes WHERE post_slug=?');$dislikes->execute([$slug]);$reaction=null;if($user){$q=$pdo->prepare('SELECT CASE WHEN EXISTS(SELECT 1 FROM post_likes WHERE user_id=? AND post_slug=?) THEN "like" WHEN EXISTS(SELECT 1 FROM post_dislikes WHERE user_id=? AND post_slug=?) THEN "dislike" ELSE NULL END');$q->execute([$user['id'],$slug,$user['id'],$slug]);$reaction=$q->fetchColumn()?:null;}return ['likes'=>(int)$likes->fetchColumn(),'dislikes'=>(int)$dislikes->fetchColumn(),'reaction'=>$reaction,'liked'=>$reaction==='like','disliked'=>$reaction==='dislike'];}
+if($_SERVER['REQUEST_METHOD']==='GET')exit(json_encode(reactionState($pdo,$slug,currentUser($pdo))));
+if($_SERVER['REQUEST_METHOD']!=='POST'){http_response_code(405);exit(json_encode(['error'=>'Method not allowed.']));}
+$user=requireUser($pdo);$reaction=($data['reaction']??'like')==='dislike'?'dislike':'like';$pdo->beginTransaction();try{$own=$reaction==='like'?'post_likes':'post_dislikes';$other=$reaction==='like'?'post_dislikes':'post_likes';$delete=$pdo->prepare("DELETE FROM {$other} WHERE user_id=? AND post_slug=?");$delete->execute([$user['id'],$slug]);$check=$pdo->prepare("SELECT 1 FROM {$own} WHERE user_id=? AND post_slug=?");$check->execute([$user['id'],$slug]);if($check->fetchColumn()){$remove=$pdo->prepare("DELETE FROM {$own} WHERE user_id=? AND post_slug=?");$remove->execute([$user['id'],$slug]);}else{$add=$pdo->prepare("INSERT INTO {$own}(user_id,post_slug) VALUES(?,?)");$add->execute([$user['id'],$slug]);}$pdo->commit();}catch(Throwable $error){$pdo->rollBack();throw $error;}
+echo json_encode(reactionState($pdo,$slug,$user));

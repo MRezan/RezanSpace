@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://trendtechorbit.freedev.app';
 type Comment = { id:number; body:string; created_at:string; updated_at:string; user_id:number; name:string; bio:string; can_delete:boolean };
 
 export function Comments({ slug }: { slug:string }) {

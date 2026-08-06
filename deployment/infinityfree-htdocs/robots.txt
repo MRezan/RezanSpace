@@ -1,0 +1,10 @@
+User-Agent: *
+Allow: /
+Disallow: /admin
+Disallow: /account
+Disallow: /profile
+Disallow: /library
+Disallow: /create
+Disallow: /story
+
+Sitemap: https://trendtechorbit.freedev.app/sitemap.xml

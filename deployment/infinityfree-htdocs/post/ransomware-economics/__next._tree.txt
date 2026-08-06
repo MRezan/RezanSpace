@@ -1,0 +1,9 @@
+:HL["/_next/static/css/b234e88743c668a9.css","style"]
+:HL["/_next/static/css/d32f731d24e1c3e7.css","style"]
+:HL["/favicon.svg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/technology-dispatch-03.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/technology-dispatch-08.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/technology-dispatch-13.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/technology-dispatch-18.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/technology-dispatch-23.jpg","image"]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"post","param":null,"prefetchHints":0,"slots":{"children":{"name":"slug","param":{"type":"d","key":"ransomware-economics","siblings":null},"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}}}},"staleTime":300,"buildId":"g0MN_GYyjlyj5vWRBI5jX"}

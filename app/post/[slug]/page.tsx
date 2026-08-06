@@ -11,10 +11,19 @@ import { LivePostBody, LivePostHeader } from '../live-post-text';
 export const dynamic = 'force-static';
 export const dynamicParams = false;
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://rezantech.web.app';
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://trendtechorbit.freedev.app';
+const BUILD_API = process.env.REZAN_BUILD_API_URL || API;
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://trendtechorbit.freedev.app';
 type Related = { id:number;slug:string;title:string;excerpt:string;image_url:string;author:string;published_at:string;category_name:string;like_count:number;comment_count:number };
 type Post = Related & { content:string; related:Related[]; updated_at?:string };
+
+function deployAssetUrl(value:string) {
+  return value.replace(/^https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?/i,API);
+}
+
+function deployPostAssets(post:Post):Post {
+  return {...post,image_url:deployAssetUrl(post.image_url||''),related:(post.related||[]).map(item=>({...item,image_url:deployAssetUrl(item.image_url||'')}))};
+}
 
 function seoDescription(value:string) {
   const text=value.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
@@ -25,16 +34,16 @@ function seoDescription(value:string) {
 
 async function getPost(slug:string):Promise<Post|null> {
   try {
-    const response = await fetch(`${API}/api/posts.php?slug=${encodeURIComponent(slug)}`, { cache:'no-store' });
-    return response.ok ? response.json() : null;
+    const response = await fetch(`${BUILD_API}/api/posts.php?slug=${encodeURIComponent(slug)}`, { cache:'no-store' });
+    return response.ok ? deployPostAssets(await response.json()) : null;
   } catch { return null; }
 }
 
 export async function generateStaticParams() {
   try {
-    const first=await fetch(`${API}/api/posts.php?page=1&limit=25`,{cache:'no-store'}).then(response=>response.json());
+    const first=await fetch(`${BUILD_API}/api/posts.php?page=1&limit=25`,{cache:'no-store'}).then(response=>response.json());
     const pageCount=Math.max(1,Math.ceil(Number(first.pagination?.total||0)/25));
-    const remaining=pageCount>1?await Promise.all(Array.from({length:pageCount-1},(_,index)=>index+2).map(page=>fetch(`${API}/api/posts.php?page=${page}&limit=25`,{cache:'no-store'}).then(response=>response.json()))):[];
+    const remaining=pageCount>1?await Promise.all(Array.from({length:pageCount-1},(_,index)=>index+2).map(page=>fetch(`${BUILD_API}/api/posts.php?page=${page}&limit=25`,{cache:'no-store'}).then(response=>response.json()))):[];
     return [first,...remaining].flatMap(page=>page.data||[]).map((post:{slug:string})=>({slug:post.slug}));
   } catch { return []; }
 }

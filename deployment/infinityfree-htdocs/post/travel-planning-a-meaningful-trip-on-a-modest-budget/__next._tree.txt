@@ -1,0 +1,11 @@
+:HL["/_next/static/css/b234e88743c668a9.css","style"]
+:HL["/_next/static/css/d32f731d24e1c3e7.css","style"]
+:HL["/favicon.svg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/travel-planning-a-meaningful-trip-on-a-modest-budget.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/technology-what-local-first-software-changes.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/technology-protecting-personal-data-by-design.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/business-how-local-businesses-use-digital-payments.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/science-what-researchers-learn-from-ancient-ice.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/health-a-realistic-approach-to-better-sleep.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/health-what-stress-recovery-actually-looks-like.jpg","image"]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"post","param":null,"prefetchHints":0,"slots":{"children":{"name":"slug","param":{"type":"d","key":"travel-planning-a-meaningful-trip-on-a-modest-budget","siblings":null},"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}}}},"staleTime":300,"buildId":"g0MN_GYyjlyj5vWRBI5jX"}

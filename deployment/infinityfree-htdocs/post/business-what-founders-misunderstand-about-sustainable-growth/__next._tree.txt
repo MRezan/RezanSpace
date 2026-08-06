@@ -1,0 +1,11 @@
+:HL["/_next/static/css/b234e88743c668a9.css","style"]
+:HL["/_next/static/css/d32f731d24e1c3e7.css","style"]
+:HL["/favicon.svg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/business-what-founders-misunderstand-about-sustainable-growth.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/technology-the-return-of-repairable-hardware.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/technology-how-teams-evaluate-automation.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/business-building-trust-during-organizational-change.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/science-why-materials-science-is-entering-a-creative-era.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/science-why-reproducibility-matters-to-everyone.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/health-why-preventive-care-starts-with-access.jpg","image"]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"post","param":null,"prefetchHints":0,"slots":{"children":{"name":"slug","param":{"type":"d","key":"business-what-founders-misunderstand-about-sustainable-growth","siblings":null},"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}}}},"staleTime":300,"buildId":"g0MN_GYyjlyj5vWRBI5jX"}

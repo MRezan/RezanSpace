@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://trendtechorbit.freedev.app';
 
 type Notice = {
   id: number;
@@ -40,10 +40,14 @@ export function UserAppBar() {
     setViewer(cachedViewer());
     const token = localStorage.getItem('rezantech_session');
     if (!token) return;
-    fetch(`${API}/api/auth.php?action=me`, { headers:{ Authorization:`Bearer ${token}` } }).then(r=>r.ok?r.json():null).then(data=>{if(data?.user){setViewer(data.user);localStorage.setItem('rezantech_user',JSON.stringify(data.user))}});
+    fetch(`${API}/api/auth.php?action=me`, { headers:{ Authorization:`Bearer ${token}` } })
+      .then(r=>r.ok?r.json():null)
+      .then(data=>{if(data?.user){setViewer(data.user);localStorage.setItem('rezantech_user',JSON.stringify(data.user))}})
+      .catch(()=>null);
     fetch(`${API}/api/library.php`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
-      .then(data => data && setNotices(data.notifications || []));
+      .then(data => data && setNotices(data.notifications || []))
+      .catch(()=>null);
   }, [pathname]);
 
   useEffect(()=>{function refresh(){setViewer(cachedViewer())}window.addEventListener('rezantech:profile-updated',refresh);return()=>window.removeEventListener('rezantech:profile-updated',refresh)},[]);
@@ -96,7 +100,7 @@ export function UserAppBar() {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type':'application/json' },
       body:JSON.stringify({id,read}),
       keepalive:true,
-    });
+    }).catch(()=>null);
   }
 
   async function logout() {

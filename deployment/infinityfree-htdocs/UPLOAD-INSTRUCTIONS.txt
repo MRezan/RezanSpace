@@ -1,0 +1,6 @@
+REZAN InfinityFree package
+
+Upload these files into the domain htdocs directory.
+Keep the existing production config.php; do not replace it with config.php.example.
+If this is a new installation, copy config.php.example to config.php and add the rotated database password.
+For InfinityFree API automation, open /api-publisher.html in a browser and remove it after the import.

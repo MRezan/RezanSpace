@@ -1,0 +1,11 @@
+:HL["/_next/static/css/b234e88743c668a9.css","style"]
+:HL["/_next/static/css/d32f731d24e1c3e7.css","style"]
+:HL["/favicon.svg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/technology-dispatch-05.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/technology-dispatch-10.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/technology-dispatch-15.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/technology-dispatch-20.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/technology-dispatch-25.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/technology-dispatch-30.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/technology-dispatch-35.jpg","image"]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"post","param":null,"prefetchHints":0,"slots":{"children":{"name":"slug","param":{"type":"d","key":"technology-dispatch-05","siblings":null},"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}}}},"staleTime":300,"buildId":"g0MN_GYyjlyj5vWRBI5jX"}

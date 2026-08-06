@@ -1,0 +1,11 @@
+:HL["/_next/static/css/b234e88743c668a9.css","style"]
+:HL["/_next/static/css/d32f731d24e1c3e7.css","style"]
+:HL["/favicon.svg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/culture-the-new-communities-forming-around-reading.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/technology-passkeys-beyond-the-early-adopters.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/technology-the-future-of-accessible-interfaces.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/business-a-practical-guide-to-customer-research.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/business-the-quiet-rise-of-employee-ownership.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/science-inside-the-search-for-better-batteries.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/health-building-a-sustainable-movement-routine.jpg","image"]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"post","param":null,"prefetchHints":0,"slots":{"children":{"name":"slug","param":{"type":"d","key":"culture-the-new-communities-forming-around-reading","siblings":null},"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}}}},"staleTime":300,"buildId":"g0MN_GYyjlyj5vWRBI5jX"}

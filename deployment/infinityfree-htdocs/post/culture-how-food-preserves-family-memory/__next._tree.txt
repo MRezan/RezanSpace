@@ -1,0 +1,11 @@
+:HL["/_next/static/css/b234e88743c668a9.css","style"]
+:HL["/_next/static/css/d32f731d24e1c3e7.css","style"]
+:HL["/favicon.svg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/culture-how-food-preserves-family-memory.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/technology-building-calmer-digital-products.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/business-the-case-for-simpler-company-metrics.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/science-what-the-newest-ocean-maps-reveal.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/science-the-mathematics-behind-fairer-schedules.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/health-what-walking-does-for-long-term-health.jpg","image"]
+:HL["https://trendtechorbit.freedev.app/uploads/health-the-evidence-behind-digital-wellbeing.jpg","image"]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"post","param":null,"prefetchHints":0,"slots":{"children":{"name":"slug","param":{"type":"d","key":"culture-how-food-preserves-family-memory","siblings":null},"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}}}},"staleTime":300,"buildId":"g0MN_GYyjlyj5vWRBI5jX"}

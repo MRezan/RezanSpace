@@ -2,7 +2,7 @@
 
 import {useEffect,useState} from 'react';
 
-const API=process.env.NEXT_PUBLIC_API_URL||'http://127.0.0.1:8000';
+const API=process.env.NEXT_PUBLIC_API_URL||'https://trendtechorbit.freedev.app';
 type TextState={title:string;excerpt:string;content:string};
 
 function displayContent(content:string){

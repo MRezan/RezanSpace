@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { FollowButton } from '../follow-button';
 import { ExpandableText } from '../expandable-text';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://trendtechorbit.freedev.app';
 import {categories} from '../categories';
 const topics = [...categories];
 type Mode = 'stories'|'people'|'topics';
@@ -32,6 +32,7 @@ function Search() {
   useEffect(() => {
     Promise.all([1,2,3,4,5,6,7].map(page => fetch(`${API}/api/posts.php?page=${page}&limit=25`).then(response => response.json())))
       .then(pages => setPosts(pages.flatMap(page => page.data || [])))
+      .catch(() => setPosts([]))
       .finally(() => setLoading(false));
   }, []);
 

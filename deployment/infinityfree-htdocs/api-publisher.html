@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>REZAN API Publisher</title>
+  <style>
+    :root{color-scheme:light;--ink:#13231f;--muted:#64736f;--line:#dce7e3;--brand:#2d7568;--soft:#f2f7f5;--danger:#a13e3e}*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#f6faf8,#e9f2ef);color:var(--ink);font:15px/1.5 Inter,ui-sans-serif,system-ui,sans-serif}.shell{width:min(960px,calc(100% - 32px));margin:40px auto}.brand{display:flex;align-items:center;gap:12px;margin-bottom:24px}.logo{display:grid;place-items:center;width:44px;height:44px;border-radius:14px;background:#5868f2;color:white;font:800 25px Georgia,serif;box-shadow:0 9px 22px #5868f233}.brand strong{font-size:19px}.brand span{display:block;color:var(--muted);font-size:12px;letter-spacing:.12em;text-transform:uppercase}.card{background:#fff;border:1px solid var(--line);border-radius:24px;padding:28px;box-shadow:0 24px 70px #193e3320}h1{margin:0 0 6px;font-size:clamp(26px,5vw,42px);letter-spacing:-.04em}p{margin:0;color:var(--muted)}.notice{margin:22px 0;padding:14px 16px;border-radius:14px;background:#fff8e8;border:1px solid #efddb0;color:#725d29}.grid{display:grid;gap:18px}label{display:grid;gap:8px;font-weight:700}small{font-weight:400;color:var(--muted)}input,textarea{width:100%;border:1px solid var(--line);border-radius:13px;background:#fbfdfc;padding:13px 14px;color:var(--ink);font:inherit;outline:none}input:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0 0 4px #2d756819}textarea{min-height:330px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}.actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px}button{border:0;border-radius:12px;padding:12px 18px;background:var(--brand);color:#fff;font:700 14px inherit;cursor:pointer}button:disabled{cursor:wait;opacity:.55}.status{min-height:22px;color:var(--muted)}.status.error{color:var(--danger)}pre{display:none;margin:20px 0 0;max-height:340px;overflow:auto;border-radius:14px;background:#10201c;color:#dff7ee;padding:16px;font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap}@media(max-width:600px){.shell{margin:20px auto}.card{padding:20px;border-radius:18px}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="brand"><div class="logo">R</div><div><strong>REZAN</strong><span>Private publishing tool</span></div></div>
+    <section class="card">
+      <h1>API Publisher</h1>
+      <p>Publish any number of categories and posts through the live, same-domain automation API.</p>
+      <div class="notice">The key remains only in this page while it is open. It is never saved in local storage or cookies. Remove this HTML file after the publishing job is complete.</div>
+      <form id="publisher" class="grid">
+        <label>Automation API key <small>The value configured as <code>automation_api_key</code>.</small><input id="key" type="password" autocomplete="off" spellcheck="false" required></label>
+        <label>Publishing JSON <small>Large imports are automatically sent in reliable batches.</small><textarea id="payload" spellcheck="false" required>{
+  "categories": [],
+  "create_missing_categories": true,
+  "on_conflict": "skip",
+  "posts": []
+}</textarea></label>
+        <label>Posts per request <small>InfinityFree works best with batches between 25 and 100.</small><input id="batch-size" type="number" min="1" max="100" value="100" required></label>
+        <div class="actions"><button id="submit" type="submit">Publish through API</button><span id="status" class="status" role="status" aria-live="polite"></span></div>
+      </form>
+      <pre id="result" aria-live="polite"></pre>
+    </section>
+  </main>
+  <script>
+    const form=document.querySelector('#publisher'),key=document.querySelector('#key'),payload=document.querySelector('#payload'),batchSize=document.querySelector('#batch-size'),button=document.querySelector('#submit'),status=document.querySelector('#status'),result=document.querySelector('#result');
+    const send=async body=>{
+      const response=await fetch('/api/automation-publish.php',{method:'POST',headers:{'Accept':'application/json','Content-Type':'application/json','X-Rezan-Automation-Key':key.value},body:JSON.stringify(body)});
+      const text=await response.text();let data;try{data=JSON.parse(text)}catch{throw new Error('The server returned a non-JSON response.')}
+      if(!response.ok)throw new Error(data.error||`Publishing failed with HTTP ${response.status}.`);
+      return data;
+    };
+    form.addEventListener('submit',async event=>{
+      event.preventDefault();status.className='status';result.style.display='none';result.textContent='';
+      let body;try{body=JSON.parse(payload.value)}catch(error){status.className='status error';status.textContent='The publishing JSON is invalid.';return}
+      if(!Array.isArray(body.categories||[])||!Array.isArray(body.posts||[])){status.className='status error';status.textContent='categories and posts must be arrays.';return}
+      const size=Math.min(100,Math.max(1,Number(batchSize.value)||100)),categories=body.categories||[],posts=body.posts||[],responses=[],totals={categories_created:0,posts_created:0,posts_updated:0,posts_skipped:0};
+      button.disabled=true;status.textContent='Preparing import…';
+      try{
+        for(let offset=0;offset<categories.length;offset+=100){status.textContent=`Creating categories ${offset+1}–${Math.min(offset+100,categories.length)} of ${categories.length}…`;const data=await send({...body,categories:categories.slice(offset,offset+100),posts:[]});responses.push(data);for(const name in totals)totals[name]+=Number(data.counts?.[name]||0)}
+        for(let offset=0;offset<posts.length;offset+=size){status.textContent=`Publishing posts ${offset+1}–${Math.min(offset+size,posts.length)} of ${posts.length}…`;const data=await send({...body,categories:[],posts:posts.slice(offset,offset+size)});responses.push(data);for(const name in totals)totals[name]+=Number(data.counts?.[name]||0)}
+        result.textContent=JSON.stringify({ok:true,requested:{categories:categories.length,posts:posts.length,batch_size:size},counts:totals,batches:responses},null,2);result.style.display='block';
+        status.textContent=`Complete: ${totals.posts_created} created, ${totals.posts_updated} updated, ${totals.posts_skipped} skipped across ${responses.length} batches.`;
+      }catch(error){status.className='status error';status.textContent=error instanceof Error?error.message:'Publishing failed.'}
+      finally{button.disabled=false}
+    });
+  </script>
+</body>
+</html>

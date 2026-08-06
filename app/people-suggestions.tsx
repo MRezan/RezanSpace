@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { FollowButton } from './follow-button';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://trendtechorbit.freedev.app';
 type Person = { id?:number; name:string; bio:string; post_count:number; follower_count:number };
 
 export function PeopleSuggestions() {
@@ -12,7 +12,9 @@ export function PeopleSuggestions() {
   useEffect(() => {
     const token = localStorage.getItem('rezantech_session');
     fetch(`${API}/api/people.php?limit=3`, { headers:token ? { Authorization:`Bearer ${token}` } : {} })
-      .then(response => response.json()).then(data => setPeople(data.data || []));
+      .then(response => response.ok ? response.json() : {data:[]})
+      .then(data => setPeople(data.data || []))
+      .catch(() => setPeople([]));
   }, []);
   return <section><h3>People to follow</h3>{people.map((person,index) => <div className="suggest" key={person.name}>
     <Link className={`avatar a${index}`} href={`/author/?name=${encodeURIComponent(person.name)}`}>{person.name[0]}</Link>

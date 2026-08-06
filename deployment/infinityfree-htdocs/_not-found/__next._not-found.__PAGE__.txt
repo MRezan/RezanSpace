@@ -1,0 +1,7 @@
+1:"$Sreact.fragment"
+2:I[1740,["740","static/chunks/740-bd2d46e0932b4d2d.js","345","static/chunks/app/not-found-17769eae50783d5a.js"],""]
+3:I[2748,[],"OutletBoundary"]
+4:"$Sreact.suspense"
+:HL["/favicon.svg","image"]
+0:{"rsc":["$","$1","c",{"children":[["$","main",null,{"className":"custom-not-found","children":[["$","section",null,{"children":[["$","$L2",null,{"className":"not-found-brand","href":"/","aria-label":"REZAN home","children":[["$","img",null,{"src":"/favicon.svg","alt":""}],["$","strong",null,{"children":"REZAN"}]]}],["$","div",null,{"className":"not-found-code","aria-hidden":"true","children":[["$","span",null,{"children":"4"}],["$","i",null,{"children":"R"}],["$","span",null,{"children":"4"}]]}],["$","small",null,{"children":"PAGE NOT FOUND"}],["$","h1",null,{"children":"This story took a different path."}],["$","p",null,{"children":"The page may have moved, been unpublished, or never existed. There are still plenty of ideas worth discovering."}],["$","nav",null,{"aria-label":"Not found actions","children":[["$","$L2",null,{"className":"not-found-primary","href":"/","children":"Return home"}],["$","$L2",null,{"href":"/discover/","children":"Explore stories"}]]}]]}],["$","div",null,{"className":"not-found-orbit","aria-hidden":"true","children":[["$","i",null,{}],["$","i",null,{}],["$","i",null,{}]]}]]}],null,["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"g0MN_GYyjlyj5vWRBI5jX"}
+5:null

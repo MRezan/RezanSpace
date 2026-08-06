@@ -1,0 +1,5 @@
+<?php
+declare(strict_types=1);require dirname(__DIR__).'/bootstrap.php';$user=requireUser($pdo);
+if($_SERVER['REQUEST_METHOD']==='GET'){$q=$pdo->prepare('SELECT author_name FROM author_follows WHERE user_id=? ORDER BY created_at DESC');$q->execute([$user['id']]);exit(json_encode(['data'=>array_column($q->fetchAll(),'author_name')]));}
+if($_SERVER['REQUEST_METHOD']==='POST'){$name=mb_substr(trim(input()['author']??''),0,120);if(!$name){http_response_code(422);exit(json_encode(['error'=>'Writer required.']));}$q=$pdo->prepare('SELECT 1 FROM author_follows WHERE user_id=? AND author_name=?');$q->execute([$user['id'],$name]);if($q->fetchColumn()){$q=$pdo->prepare('DELETE FROM author_follows WHERE user_id=? AND author_name=?');$q->execute([$user['id'],$name]);$following=false;}else{$q=$pdo->prepare('INSERT INTO author_follows(user_id,author_name) VALUES(?,?)');$q->execute([$user['id'],$name]);$following=true;}exit(json_encode(['following'=>$following]));}
+http_response_code(405);echo json_encode(['error'=>'Method not allowed.']);

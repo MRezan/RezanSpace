@@ -1,0 +1,5 @@
+<?php
+declare(strict_types=1);require dirname(__DIR__).'/bootstrap.php';requireAdmin($pdo,$config);
+if($_SERVER['REQUEST_METHOD']==='GET'){$page=max((int)($_GET['page']??1),1);$limit=min(max((int)($_GET['limit']??20),5),100);$offset=($page-1)*$limit;$search=trim((string)($_GET['q']??''));$where='';$params=[];if($search!==''){$where='WHERE email LIKE ?';$params=['%'.$search.'%'];}$count=$pdo->prepare("SELECT COUNT(*) FROM subscribers $where");$count->execute($params);$total=(int)$count->fetchColumn();$q=$pdo->prepare("SELECT id,email,created_at FROM subscribers $where ORDER BY created_at DESC LIMIT $limit OFFSET $offset");$q->execute($params);exit(json_encode(['data'=>$q->fetchAll(),'pagination'=>['page'=>$page,'limit'=>$limit,'total'=>$total,'pages'=>(int)ceil($total/$limit),'has_more'=>$offset+$limit<$total]]));}
+if($_SERVER['REQUEST_METHOD']==='DELETE'){$q=$pdo->prepare('DELETE FROM subscribers WHERE id=?');$q->execute([(int)($_GET['id']??0)]);exit(json_encode(['ok'=>true]));}
+http_response_code(405);echo json_encode(['error'=>'Method not allowed.']);

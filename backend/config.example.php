@@ -1,2 +1,2 @@
 <?php
-return ['db_host'=>'127.0.0.1','db_name'=>'rezantech','db_user'=>'root','db_pass'=>'','admin_email'=>'asifrezan.office@gmail.com','frontend_origin'=>'http://localhost:3000','site_url'=>'https://rezantech.web.app','deploy_webhook_url'=>'','deploy_webhook_secret'=>''];
+return ['db_host'=>'127.0.0.1','db_name'=>'rezantech','db_user'=>'root','db_pass'=>'','admin_email'=>'asifrezan.office@gmail.com','frontend_origin'=>'http://localhost:3000','frontend_origins'=>['http://localhost:3000','https://rezantech.web.app'],'site_url'=>'https://rezantech.web.app','api_url'=>'http://127.0.0.1:8000','automation_api_key'=>'PASTE_A_RANDOM_SECRET_OF_AT_LEAST_32_CHARACTERS','deploy_webhook_url'=>'','deploy_webhook_secret'=>''];
