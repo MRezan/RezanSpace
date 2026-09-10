@@ -6,7 +6,7 @@ import { SaveButton } from '../save-button';
 import { FollowButton } from '../follow-button';
 import { ExpandableText } from '../expandable-text';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://trendtechorbit.freedev.app';
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://rezan.space';
 import {categories} from '../categories';
 const topics = ['All', ...categories];
 type Post = { id:number; slug:string; title:string; excerpt:string; image_url:string; author:string; published_at:string; category_name:string; like_count:number; comment_count:number };

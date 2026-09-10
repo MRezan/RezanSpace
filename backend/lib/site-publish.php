@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 function refreshSitemap(PDO $pdo, array $config): bool
 {
-    $site=rtrim((string)($config['site_url']??'https://trendtechorbit.freedev.app'),'/');
+    $site=rtrim((string)($config['site_url']??'http://rezan.space'),'/');
     $rows=$pdo->query("SELECT slug,COALESCE(updated_at,published_at,created_at) updated_at FROM posts WHERE status='published' ORDER BY published_at DESC,id DESC")->fetchAll();
     $urls=[[$site.'/',gmdate(DATE_ATOM),'daily','1.0'],[$site.'/discover/',gmdate(DATE_ATOM),'daily','0.9']];
     foreach($rows as $row){$urls[]=[$site.'/post/'.rawurlencode($row['slug']).'/',date(DATE_ATOM,strtotime($row['updated_at'])),'weekly','0.8'];}
@@ -19,7 +19,7 @@ function refreshSitemap(PDO $pdo, array $config): bool
 function requestStaticDeploy(array $config,string $slug):bool
 {
     $url=trim((string)($config['deploy_webhook_url']??''));if($url==='')return false;
-    $payload=json_encode(['event'=>'post_published','slug'=>$slug,'site_url'=>$config['site_url']??'https://trendtechorbit.freedev.app']);
+    $payload=json_encode(['event'=>'post_published','slug'=>$slug,'site_url'=>$config['site_url']??'http://rezan.space']);
     $headers="Content-Type: application/json\r\n";$secret=trim((string)($config['deploy_webhook_secret']??''));if($secret!=='')$headers.="Authorization: Bearer {$secret}\r\n";
     $context=stream_context_create(['http'=>['method'=>'POST','header'=>$headers,'content'=>$payload,'timeout'=>3,'ignore_errors'=>true]]);
     return @file_get_contents($url,false,$context)!==false;

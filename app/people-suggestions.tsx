@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { FollowButton } from './follow-button';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://trendtechorbit.freedev.app';
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://rezan.space';
 type Person = { id?:number; name:string; bio:string; post_count:number; follower_count:number };
 
 export function PeopleSuggestions() {

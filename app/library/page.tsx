@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { SaveButton } from '../save-button';
 import { ExpandableText } from '../expandable-text';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://trendtechorbit.freedev.app';
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://rezan.space';
 type SavedStory = { post_slug:string; saved_at:string; title:string; excerpt:string; image_url:string; author:string; published_at:string; category_name:string; like_count:number; comment_count:number };
 
 export default function Library() {

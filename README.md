@@ -17,8 +17,8 @@ The PHP/MySQL backend is in `backend/`. The production database name is `if0_425
 This is the only API reference needed for future AI-assisted publishing.
 
 ```text
-Publisher: https://trendtechorbit.freedev.app/api-publisher.html
-Endpoint:  https://trendtechorbit.freedev.app/api/automation-publish.php
+Publisher: http://rezan.space/api-publisher.html
+Endpoint:  http://rezan.space/api/automation-publish.php
 API key:   3a35e9a53baa9327a0bf8dda784cf26575f421f56ac874a9d6fd3383de389021
 ```
 
@@ -41,7 +41,7 @@ The publisher accepts an unlimited overall number of posts. It sends them sequen
       "content": "<p>Start with the light available to you.</p><h2>Choose suitable plants</h2><p>Herbs and leafy greens are forgiving choices.</p>",
       "author": "Maya Chen",
       "category": "Lifestyle",
-      "image_url": "https://trendtechorbit.freedev.app/uploads/example.jpg",
+      "image_url": "http://rezan.space/uploads/example.jpg",
       "status": "published",
       "published_at": "2026-08-06T10:00:00Z"
     }
@@ -78,7 +78,7 @@ When the hosting environment permits direct API access:
 
 ```bash
 curl --fail-with-body -sS \
-  -X POST "https://trendtechorbit.freedev.app/api/automation-publish.php" \
+  -X POST "http://rezan.space/api/automation-publish.php" \
   -H "X-Rezan-Automation-Key: 3a35e9a53baa9327a0bf8dda784cf26575f421f56ac874a9d6fd3383de389021" \
   -H "Content-Type: application/json" \
   --data-binary @publishing-payload.json

@@ -4,7 +4,7 @@ import './admin.css';
 import './admin-dashboard-v2.css';
 import {FormEvent,useCallback,useEffect,useState} from 'react';
 import {useConfirmDialog} from '../confirm-dialog';
-const API=process.env.NEXT_PUBLIC_API_URL||'https://trendtechorbit.freedev.app';
+const API=process.env.NEXT_PUBLIC_API_URL||'http://rezan.space';
 type Tab='overview'|'posts'|'new'|'categories'|'subscribers'|'users';
 type Access='checking'|'allowed'|'signed-out'|'denied'|'offline';
 type Post={id:number;title:string;slug:string;excerpt:string;author:string;status:string;category_name:string;created_at:string};

@@ -11,9 +11,9 @@ import { LivePostBody, LivePostHeader } from '../live-post-text';
 export const dynamic = 'force-static';
 export const dynamicParams = false;
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://trendtechorbit.freedev.app';
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://rezan.space';
 const BUILD_API = process.env.REZAN_BUILD_API_URL || API;
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://trendtechorbit.freedev.app';
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'http://rezan.space';
 type Related = { id:number;slug:string;title:string;excerpt:string;image_url:string;author:string;published_at:string;category_name:string;like_count:number;comment_count:number };
 type Post = Related & { content:string; related:Related[]; updated_at?:string };
 

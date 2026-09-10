@@ -9,7 +9,7 @@ import {categories} from './categories';
 import {EngagementCounts} from './engagement-counts';
 import {RichTextEditor} from './rich-text-editor';
 import {FormEvent,useCallback,useEffect,useMemo,useRef,useState} from 'react';
-const API=process.env.NEXT_PUBLIC_API_URL||'https://trendtechorbit.freedev.app';
+const API=process.env.NEXT_PUBLIC_API_URL||'http://rezan.space';
 type Post={id:number;slug:string;title:string;excerpt:string;content:string;image_url:string;author:string;published_at:string;category_name:string;like_count:number;comment_count:number};
 type Viewer={name:string}|null;
 const topics=['All',...categories];

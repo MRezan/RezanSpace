@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://trendtechorbit.freedev.app';
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://rezan.space';
 
 type Notice = {
   id: number;

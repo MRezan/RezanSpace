@@ -8,7 +8,7 @@ import { categories } from '../categories';
 import { RichTextEditor } from '../rich-text-editor';
 import {useConfirmDialog} from '../confirm-dialog';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://trendtechorbit.freedev.app';
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://rezan.space';
 type View = 'home' | 'edit' | 'write' | 'library' | 'editStory';
 type User = { id:number; name:string; email:string; bio:string; website:string; avatar_url:string; profession:string; address:string; interests:string; role:string; created_at:string };
 type UserPost = { id:number; slug:string; title:string; excerpt:string; content:string; category_name:string; status:string; created_at:string };

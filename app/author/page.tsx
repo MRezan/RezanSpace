@@ -7,7 +7,7 @@ import { FollowButton } from '../follow-button';
 import { LikeButton } from '../like-button';
 import { SaveButton } from '../save-button';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://trendtechorbit.freedev.app';
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://rezan.space';
 type Post = { id:number; slug:string; title:string; excerpt:string; image_url:string; author:string; published_at:string; category_name:string; like_count:number; comment_count:number };
 type Person = { name:string; bio:string; website:string; avatar_url:string; profession:string; address:string; interests:string; created_at:string|null; post_count:number; follower_count:number };
 

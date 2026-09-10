@@ -3,7 +3,7 @@ import Link from 'next/link';
 import {FormEvent,useState} from 'react';
 import {useRouter} from 'next/navigation';
 import {suggestedInterests} from '../categories';
-const API=process.env.NEXT_PUBLIC_API_URL||'https://trendtechorbit.freedev.app';
+const API=process.env.NEXT_PUBLIC_API_URL||'http://rezan.space';
 
 export default function Account(){
   const [mode,setMode]=useState<'login'|'register'>('login'),[error,setError]=useState(''),[busy,setBusy]=useState(false),[interests,setInterests]=useState<string[]>([]);const router=useRouter();

@@ -8,7 +8,7 @@ import {LikeButton} from '../like-button';
 import {SaveButton} from '../save-button';
 import {ShareButton} from '../share-button';
 
-const API=process.env.NEXT_PUBLIC_API_URL||'https://trendtechorbit.freedev.app';
+const API=process.env.NEXT_PUBLIC_API_URL||'http://rezan.space';
 type Post={slug:string;title:string;excerpt:string;content:string;image_url:string;author:string;published_at:string;category_name:string};
 
 function requestedSlug(){

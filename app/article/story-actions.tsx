@@ -5,7 +5,7 @@ import { SaveButton } from '../save-button';
 import { ShareButton } from '../share-button';
 import { LikeButton } from '../like-button';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://trendtechorbit.freedev.app';
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://rezan.space';
 
 export function StoryActions({ slug }: { slug:string }) {
   const [data, setData] = useState({ comments:0 });

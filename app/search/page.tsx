@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { FollowButton } from '../follow-button';
 import { ExpandableText } from '../expandable-text';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://trendtechorbit.freedev.app';
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://rezan.space';
 import {categories} from '../categories';
 const topics = [...categories];
 type Mode = 'stories'|'people'|'topics';

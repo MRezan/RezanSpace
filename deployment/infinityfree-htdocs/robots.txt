@@ -7,4 +7,4 @@ Disallow: /library
 Disallow: /create
 Disallow: /story
 
-Sitemap: https://trendtechorbit.freedev.app/sitemap.xml
+Sitemap: http://rezan.space/sitemap.xml

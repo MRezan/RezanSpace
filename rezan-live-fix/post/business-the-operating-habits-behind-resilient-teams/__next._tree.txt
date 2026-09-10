@@ -1,0 +1,11 @@
+:HL["/_next/static/css/b234e88743c668a9.css","style"]
+:HL["/_next/static/css/d32f731d24e1c3e7.css","style"]
+:HL["/favicon.svg","image"]
+:HL["http://rezan.space/uploads/business-the-operating-habits-behind-resilient-teams.jpg","image"]
+:HL["http://rezan.space/uploads/technology-private-ai-on-everyday-devices.jpg","image"]
+:HL["http://rezan.space/uploads/technology-open-source-tools-worth-learning.jpg","image"]
+:HL["http://rezan.space/uploads/business-what-makes-a-useful-board-meeting.jpg","image"]
+:HL["http://rezan.space/uploads/science-the-surprising-intelligence-of-urban-birds.jpg","image"]
+:HL["http://rezan.space/uploads/science-the-microbes-that-help-forests-communicate.jpg","image"]
+:HL["http://rezan.space/uploads/health-the-social-side-of-healthy-aging.jpg","image"]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"post","param":null,"prefetchHints":0,"slots":{"children":{"name":"slug","param":{"type":"d","key":"business-the-operating-habits-behind-resilient-teams","siblings":null},"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}}}},"staleTime":300,"buildId":"g0MN_GYyjlyj5vWRBI5jX"}
