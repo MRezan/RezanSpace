@@ -60,6 +60,7 @@ try{
  foreach($categories as $category)$ensureCategory($category);
  foreach($posts as $index=>$post){
   if(!is_array($post))automationError(422,"Post at index {$index} must be an object.");
+  $language=postLanguage($post['language']??'en');$translationKey=postTranslationKey($post['translation_key']??null);
   $title=automationText($post['title']??'',240);$excerpt=automationText(strip_tags((string)($post['excerpt']??'')),1000);$author=automationText($post['author']??'',120);
   $content=sanitizeRichText((string)($post['content']??''));
   if($title===''||$excerpt===''||$content===''||$author==='')automationError(422,"Post at index {$index} requires title, excerpt, content, and author.");
@@ -71,16 +72,18 @@ try{
    $categoryId=(int)$category['id'];
   }
   $status=(string)($post['status']??'published');if(!in_array($status,['draft','published'],true))automationError(422,"Post '{$slug}' status must be draft or published.");
-  $imageUrl=automationImageUrl($post['image_url']??'');$publishedAt=automationDate($post['published_at']??null,$status);
-  $existing=$pdo->prepare('SELECT id FROM posts WHERE slug=? LIMIT 1');$existing->execute([$slug]);$existingId=$existing->fetchColumn();
+  $imageAlt=automationText($post['image_alt']??'',180);$imageUrl=automationImageUrl($post['image_url']??'');$publishedAt=automationDate($post['published_at']??null,$status);
+  $existing=$pdo->prepare('SELECT id,language,translation_key FROM posts WHERE slug=? LIMIT 1');$existing->execute([$slug]);$existingPost=$existing->fetch();$existingId=$existingPost['id']??null;
   if($existingId){
    if($conflict==='error')automationError(409,"Post slug '{$slug}' already exists.");
    if($conflict==='skip'){$skippedPosts[]=['id'=>(int)$existingId,'slug'=>$slug];continue;}
-   $update=$pdo->prepare('UPDATE posts SET category_id=?,user_id=NULL,title=?,excerpt=?,image_url=?,content=?,author=?,status=?,published_at=? WHERE id=?');
-   $update->execute([$categoryId,$title,$excerpt,$imageUrl,$content,$author,$status,$publishedAt,$existingId]);$updatedPosts[]=['id'=>(int)$existingId,'slug'=>$slug];continue;
+   if(!array_key_exists('language',$post))$language=$existingPost['language'];
+   if(!array_key_exists('translation_key',$post))$translationKey=$existingPost['translation_key'];
+   $update=$pdo->prepare('UPDATE posts SET category_id=?,user_id=NULL,title=?,excerpt=?,image_url=?,content=?,author=?,status=?,published_at=?,language=?,translation_key=?,image_alt=? WHERE id=?');
+   $update->execute([$categoryId,$title,$excerpt,$imageUrl,$content,$author,$status,$publishedAt,$language,$translationKey,$imageAlt,$existingId]);$updatedPosts[]=['id'=>(int)$existingId,'slug'=>$slug];continue;
   }
-  $insert=$pdo->prepare('INSERT INTO posts (category_id,user_id,slug,title,excerpt,image_url,content,author,status,published_at) VALUES (?,NULL,?,?,?,?,?,?,?,?)');
-  $insert->execute([$categoryId,$slug,$title,$excerpt,$imageUrl,$content,$author,$status,$publishedAt]);$createdPosts[]=['id'=>(int)$pdo->lastInsertId(),'slug'=>$slug];
+  $insert=$pdo->prepare('INSERT INTO posts (category_id,user_id,slug,title,excerpt,image_url,content,author,status,published_at,language,translation_key,image_alt) VALUES (?,NULL,?,?,?,?,?,?,?,?,?,?,?)');
+  $insert->execute([$categoryId,$slug,$title,$excerpt,$imageUrl,$content,$author,$status,$publishedAt,$language,$translationKey,$imageAlt]);$createdPosts[]=['id'=>(int)$pdo->lastInsertId(),'slug'=>$slug];
  }
  $pdo->commit();
 }catch(PDOException $error){if($pdo->inTransaction())$pdo->rollBack();automationError($error->getCode()==='23000'?409:500,'The publishing request could not be completed.');}

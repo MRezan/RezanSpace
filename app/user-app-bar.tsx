@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import {LanguageSwitcher} from './language-switcher';
 import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://rezan.space';
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://rezan.space';
 
 type Notice = {
   id: number;
@@ -122,8 +123,8 @@ export function UserAppBar() {
 
   return <header className="social-top upgraded user-appbar">
     <div className="app-brand">
-      <Link href="/" className="social-logo" aria-label="REZAN home"><img src="/favicon.svg" alt=""/></Link>
-      <Link href="/" className="app-wordmark">REZAN</Link>
+      <Link href="/en/" className="social-logo" aria-label="REZAN home"><img src="/favicon.svg" alt=""/></Link>
+      <Link href="/en/" className="app-wordmark">REZAN</Link>
     </div>
     <form className="app-search" onSubmit={search}>
       <span>⌕</span>
@@ -135,7 +136,7 @@ export function UserAppBar() {
       <Link className={activePath.startsWith('/discover') ? 'active' : ''} href="/discover">◈<small>Discover</small></Link>
       <Link className={activePath.startsWith('/library') ? 'active' : ''} href={viewer ? '/library' : '/account'}>♧<small>Library</small></Link>
     </nav>
-    <div className="app-actions" ref={appActions}>
+    <div className="app-actions" ref={appActions}><LanguageSwitcher/>
       <button className="notice" aria-label="Notifications" onClick={toggleNotices}>
         <span className="bell-shape">●</span>
         {unread > 0 && <i>{unread > 9 ? '9+' : unread}</i>}

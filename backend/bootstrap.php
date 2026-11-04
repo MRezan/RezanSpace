@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__.'/lib/languages.php';
 $configFile=__DIR__.'/config.php';
 if(!file_exists($configFile)){http_response_code(500);exit(json_encode(['error'=>'Copy config.example.php to config.php and configure MySQL.']));}
 $config=require $configFile;
@@ -60,7 +61,7 @@ function sanitizeRichText(string $html):string{
 function isOwner(array $user,array $config):bool{$adminEmail=strtolower((string)($config['admin_email']??''));return $adminEmail!==''&&strtolower((string)($user['email']??''))===$adminEmail&&($user['role']??'')==='admin';}
 function requireAdmin(PDO $pdo,array $config):array{$user=currentUser($pdo);if(!$user||!isOwner($user,$config)){http_response_code(403);exit(json_encode(['error'=>'Owner access is required.']));}return $user;}
 function requireStaff(PDO $pdo,array $config):array{$user=currentUser($pdo);if(!$user||(!isOwner($user,$config)&&($user['role']??'')!=='editor')){http_response_code(403);exit(json_encode(['error'=>'Editorial access is required.']));}return $user;}
-function slugify(string $value):string{return trim(preg_replace('/[^a-z0-9]+/','-',strtolower($value)),'-');}
+function slugify(string $value):string{return trim(preg_replace('/[^\p{L}\p{N}]+/u','-',mb_strtolower($value,'UTF-8')),'-');}
 function bearerToken():string{
  $header=(string)($_SERVER['HTTP_AUTHORIZATION']??$_SERVER['REDIRECT_HTTP_AUTHORIZATION']??'');
  if($header===''&&function_exists('getallheaders')){

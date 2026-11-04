@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS posts (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   category_id INT UNSIGNED NULL,
   user_id BIGINT UNSIGNED NULL,
-  slug VARCHAR(180) NOT NULL UNIQUE,
+  slug VARCHAR(180) NOT NULL UNIQUE,language VARCHAR(5) NOT NULL DEFAULT 'en',image_alt VARCHAR(180) NOT NULL DEFAULT '',translation_key VARCHAR(100) NULL,INDEX idx_language_status_date(language,status,published_at),UNIQUE KEY unique_translation_language(translation_key,language),
   title VARCHAR(240) NOT NULL,
   excerpt TEXT NOT NULL,
   image_url VARCHAR(500) NOT NULL DEFAULT '',

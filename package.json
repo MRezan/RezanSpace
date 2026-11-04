@@ -7,12 +7,13 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "php backend/scripts/refresh-sitemap.php && next build",
+    "build": "next build",
     "start": "next start",
     "test": "next build",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
-    "sitemap:refresh": "php backend/scripts/refresh-sitemap.php"
+    "sitemap:refresh": "php backend/scripts/refresh-sitemap.php",
+    "test:i18n": "REZAN_POSTS_FILE=tests/fixtures/multilingual-posts.json NEXT_PUBLIC_SITE_URL=https://example.com next build --webpack && node --test tests/multilingual-export.test.mjs && php tests/multilingual-backend.php"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",

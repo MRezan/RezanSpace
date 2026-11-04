@@ -6,7 +6,6 @@ PACKAGE_DIR="$PROJECT_ROOT/deployment/infinityfree-htdocs"
 NODE_BIN=${NODE_BIN:-node}
 
 cd "$PROJECT_ROOT"
-php backend/scripts/refresh-sitemap.php
 "$NODE_BIN" ./node_modules/next/dist/bin/next build --webpack
 
 if [ -d "$PACKAGE_DIR" ]; then

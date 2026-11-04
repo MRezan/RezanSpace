@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://rezan.space';
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://rezan.space';
 
 export function FollowButton({ author, initial = false, compact = false }: { author:string; initial?:boolean; compact?:boolean }) {
   const [following, setFollowing] = useState(initial);

@@ -1,6 +1,6 @@
 'use client';
 import {useEffect,useState} from 'react';
-const API=process.env.NEXT_PUBLIC_API_URL||'http://rezan.space';
+const API=process.env.NEXT_PUBLIC_API_URL||'https://rezan.space';
 type Reaction='like'|'dislike'|null;
 
 export function LikeButton({slug,initialCount=0,compact=false}:{slug:string;initialCount?:number;compact?:boolean}){

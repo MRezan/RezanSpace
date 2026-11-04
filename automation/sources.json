@@ -1,0 +1,7 @@
+[
+ {"feed":"https://www.nasa.gov/feed/","category":"Science","hosts":["www.nasa.gov","science.nasa.gov"]},
+ {"feed":"https://hacks.mozilla.org/feed/","category":"Technology","hosts":["hacks.mozilla.org"]},
+ {"feed":"https://web.dev/feed.xml","category":"Technology","hosts":["web.dev"]},
+ {"feed":"https://blog.python.org/feeds/posts/default?alt=rss","category":"Technology","hosts":["blog.python.org"]},
+ {"feed":"https://blog.rust-lang.org/feed.xml","category":"Technology","hosts":["blog.rust-lang.org"]}
+]

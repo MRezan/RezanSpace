@@ -42,3 +42,16 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+
+# Local multilingual build snapshots may contain unpublished/private source data.
+content/published-posts*.json
+
+!.env.example
+
+/automation/__pycache__/
+/automation/vendor/__pycache__/
+/automation/tests/__pycache__/
+/automation/node_modules/
+/.cache/
+
+/.venv/

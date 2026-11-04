@@ -1,0 +1,218 @@
+name: Multilingual AI blog publishing
+on:
+  schedule:
+    - cron: '17 */6 * * *' # 00:17, 06:17, 12:17, 18:17 Asia/Dhaka
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Generate and validate only; do not publish or deploy'
+        type: boolean
+        default: true
+permissions:
+  contents: read
+concurrency:
+  group: rezan-ai-blog
+  cancel-in-progress: false
+env:
+  BLOG_WORK_DIR: work/blog
+  REZAN_SITE_URL: https://rezan.space
+  HF_HOME: ${{ github.workspace }}/.cache/huggingface
+  HF_HUB_DISABLE_XET: '1'
+  OMP_NUM_THREADS: '4'
+  MKL_NUM_THREADS: '4'
+  CPU_IMAGE_WIDTH: '1024'
+  CPU_IMAGE_HEIGHT: '576'
+  CPU_IMAGE_STEPS: '16'
+jobs:
+  prepare:
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.AUTO_PUBLISH_ENABLED == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 100
+    outputs:
+      has_topic: ${{ steps.topic.outputs.has_topic }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: automation/requirements*.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install -r automation/requirements.txt
+      - name: Validate automation before downloading models
+        run: python -m unittest discover -s automation/tests -v
+      - name: Check hosting FTPS access before generation
+        if: ${{ github.event_name == 'schedule' || !inputs.dry_run }}
+        env:
+          REZAN_FTP_HOST: ${{ secrets.REZAN_FTP_HOST }}
+          REZAN_FTP_USER: ${{ secrets.REZAN_FTP_USER }}
+          REZAN_FTP_PASSWORD: ${{ secrets.REZAN_FTP_PASSWORD }}
+          REZAN_FTP_DIRECTORY: rezan.space/htdocs
+        run: python automation/deploy.py --check
+      - name: Restore this run's generation checkpoint on a retry
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: blog-base
+          path: work/blog
+      - name: Export existing public posts and check the live backend
+        if: ${{ github.event_name == 'schedule' || !inputs.dry_run }}
+        env:
+          REZAN_AUTOMATION_KEY: ${{ secrets.REZAN_AUTOMATION_KEY }}
+        run: |
+          npm ci --prefix automation
+          npx --prefix automation playwright install --with-deps chromium
+          node automation/delivery.mjs preflight
+      - name: Initialize a generation-only preview
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: |
+          mkdir -p work/blog
+          printf '[]' > work/blog/snapshot.json
+      - name: Select a new topic from primary publishers
+        id: topic
+        run: python automation/blog.py plan
+      - uses: actions/cache@v4
+        if: steps.topic.outputs.has_topic == 'true'
+        with:
+          path: .cache/huggingface/hub/models--unsloth--Qwen3-4B-Instruct-2507-GGUF
+          key: qwen-a06e946bb6b655725eafa393f4a9745d460374c9-cpu-v1
+      - name: Generate the source-grounded original with Qwen
+        if: steps.topic.outputs.has_topic == 'true'
+        run: |
+          pip install -r automation/requirements-text.txt
+          python -u automation/blog.py english
+      - name: Generate a relevant illustration with SSD-1B
+        if: steps.topic.outputs.has_topic == 'true'
+        run: |
+          pip install 'torch==2.7.1' --index-url https://download.pytorch.org/whl/cpu
+          pip install -r automation/requirements-image.txt
+          python -u automation/blog.py image
+      - name: Save source, English article and illustration checkpoint
+        if: ${{ always() && steps.topic.outputs.has_topic == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: blog-base
+          path: |
+            work/blog/manifest.json
+            work/blog/en.json
+            work/blog/cover.webp
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 7
+  translate:
+    needs: prepare
+    if: needs.prepare.outputs.has_topic == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 70
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        language: [en, es, pt-BR, hi, id, ar, fr, de, ja, bn, vi, tr, ko, it, pl]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: automation/requirements*.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: blog-base
+          path: work/blog
+      - uses: actions/cache/restore@v4
+        with:
+          path: .cache/huggingface/hub/models--unsloth--Qwen3-4B-Instruct-2507-GGUF
+          key: qwen-a06e946bb6b655725eafa393f4a9745d460374c9-cpu-v1
+      - name: Generate and validate this language
+        env:
+          BLOG_LANGUAGE: ${{ matrix.language }}
+        run: |
+          pip install -r automation/requirements.txt -r automation/requirements-text.txt
+          if [ "$BLOG_LANGUAGE" != en ]; then
+            python -u automation/blog.py translate --language "$BLOG_LANGUAGE"
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: blog-language-${{ matrix.language }}
+          path: work/blog/${{ matrix.language }}.json
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 7
+  publish:
+    needs: [prepare, translate]
+    if: needs.prepare.outputs.has_topic == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: blog-base
+          path: work/blog
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: blog-language-*
+          merge-multiple: true
+          path: work/blog
+      - name: Validate all translations as one publishing batch
+        run: |
+          pip install -r automation/requirements.txt
+          python automation/blog.py assemble
+      - name: Save validated generation preview
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: blog-generation-preview
+          path: |
+            work/blog/payload.json
+            work/blog/cover.webp
+            work/blog/manifest.json
+          retention-days: 7
+      - name: Publish the illustration and 15 translations, then export build data
+        if: ${{ github.event_name == 'schedule' || !inputs.dry_run }}
+        env:
+          REZAN_AUTOMATION_KEY: ${{ secrets.REZAN_AUTOMATION_KEY }}
+        run: |
+          npm ci --prefix automation
+          npx --prefix automation playwright install --with-deps chromium
+          node automation/delivery.mjs publish
+      - name: Build the real multilingual static site
+        if: ${{ github.event_name == 'schedule' || !inputs.dry_run }}
+        env:
+          REZAN_POSTS_FILE: work/blog/snapshot.json
+          NEXT_PUBLIC_SITE_URL: https://rezan.space
+          NEXT_PUBLIC_API_URL: https://rezan.space
+        run: |
+          npm ci
+          npm run build -- --webpack
+      - name: Deploy generated pages over FTPS
+        if: ${{ github.event_name == 'schedule' || !inputs.dry_run }}
+        env:
+          REZAN_FTP_HOST: ${{ secrets.REZAN_FTP_HOST }}
+          REZAN_FTP_USER: ${{ secrets.REZAN_FTP_USER }}
+          REZAN_FTP_PASSWORD: ${{ secrets.REZAN_FTP_PASSWORD }}
+          REZAN_FTP_DIRECTORY: rezan.space/htdocs
+        run: python automation/deploy.py
+      - name: Verify live pages in all 15 languages
+        if: ${{ github.event_name == 'schedule' || !inputs.dry_run }}
+        run: node automation/delivery.mjs verify
+      - name: Summarize the run
+        run: |
+          echo '### Multilingual AI blog' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Validated one source-grounded topic in all 15 languages, with an SSD-1B illustration.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Manual previews never publish. Live runs verify both the database and deployed static pages.' >> "$GITHUB_STEP_SUMMARY"

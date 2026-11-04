@@ -1,2 +1,0 @@
-import type {Metadata} from 'next';import {SocialFeed} from './social-feed';import {FollowController} from './follow-controller';
-export const metadata:Metadata={title:'REZAN — Stories, ideas and perspectives',description:'Discover original writing from independent voices across technology, business, science, health, culture, education, lifestyle, finance, travel and more.',alternates:{canonical:'/'}};export default function Home(){return <><SocialFeed/><FollowController/></>}

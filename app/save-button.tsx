@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://rezan.space';
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://rezan.space';
 
 export function SaveButton({ slug, compact = false }: { slug:string; compact?:boolean }) {
   const [saved, setSaved] = useState(false);
