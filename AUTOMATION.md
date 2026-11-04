@@ -90,3 +90,7 @@ npm run test:i18n
 The CI checks do not download model weights or publish. Real model generation
 and language/evidence review are exercised by a manual preview. Full AI output
 quality cannot be established by unit tests alone.
+
+## Rebuild and deploy without generating new AI content
+
+Run **Deploy live multilingual site** manually to verify HTTPS, export the migrated live API, rebuild all language pages from real published posts, upload over FTPS and check the live sitemap and pages. It shares a deployment lock with AI publishing and preserves the host configuration and user-uploaded media.

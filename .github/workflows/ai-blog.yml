@@ -168,6 +168,9 @@ jobs:
           overwrite: true
           retention-days: 7
   publish:
+    concurrency:
+      group: rezan-live-deploy
+      cancel-in-progress: false
     needs: [prepare, translate, illustrate]
     if: needs.prepare.outputs.has_topic == 'true'
     runs-on: ubuntu-24.04

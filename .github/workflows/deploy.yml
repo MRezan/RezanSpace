@@ -1,0 +1,71 @@
+name: Deploy live multilingual site
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: rezan-live-deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    env:
+      REZAN_SITE_URL: https://rezan.space
+      BLOG_WORK_DIR: work/blog
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Wait for verified public HTTPS activation
+        run: |
+          python -u - <<'PY'
+          import socket, ssl, time
+          for attempt in range(61):
+              try:
+                  with socket.create_connection(('rezan.space',443),timeout=15) as raw:
+                      with ssl.create_default_context().wrap_socket(raw,server_hostname='rezan.space') as connection:
+                          certificate=connection.getpeercert()
+                  print('Public HTTPS certificate chain and hostname verified.',flush=True)
+                  break
+              except (OSError,ssl.SSLError):
+                  if attempt==60:raise SystemExit('Hosting has not activated the installed SSL certificate; deployment stopped.')
+                  if attempt==0:print('Waiting for the hosting provider to activate the installed certificate; verification stays enabled.',flush=True)
+                  time.sleep(30)
+          PY
+      - name: Install the publishing client
+        run: |
+          npm ci --prefix automation
+          npx --prefix automation playwright install --with-deps chromium
+      - name: Check the migrated backend and export real published posts
+        env:
+          REZAN_AUTOMATION_KEY: ${{ secrets.REZAN_AUTOMATION_KEY }}
+        run: |
+          for attempt in $(seq 1 12); do
+            if node automation/delivery.mjs preflight; then exit 0; fi
+            if [ "$attempt" = 12 ]; then exit 1; fi
+            sleep 10
+          done
+      - name: Build production HTML from the live database snapshot
+        env:
+          REZAN_POSTS_FILE: work/blog/snapshot.json
+          NEXT_PUBLIC_SITE_URL: https://rezan.space
+          NEXT_PUBLIC_API_URL: https://rezan.space
+        run: |
+          npm ci
+          npm run build -- --webpack
+      - name: Upload managed files using verified FTPS
+        env:
+          REZAN_FTP_HOST: ${{ secrets.REZAN_FTP_HOST }}
+          REZAN_FTP_USER: ${{ secrets.REZAN_FTP_USER }}
+          REZAN_FTP_PASSWORD: ${{ secrets.REZAN_FTP_PASSWORD }}
+          REZAN_FTP_DIRECTORY: rezan.space/htdocs
+        run: python automation/deploy.py
+      - name: Verify live language homes, published articles and sitemap
+        run: node automation/delivery.mjs verify-site

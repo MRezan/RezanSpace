@@ -66,5 +66,18 @@ try{
    if(!response.ok()||!markup.includes(`lang="${post.language}"`)||!markup.includes(target.href)||!markup.includes('rel="canonical"'))throw new Error('A deployed language page is missing or stale');
   }
   console.log('Verified live static pages for all 15 languages.');
+ } else if(stage==='verify-site'){
+  const languages=['en','es','pt-BR','hi','id','ar','fr','de','ja','bn','vi','tr','ko','it','pl'];
+  for(const language of languages){
+   const url=new URL(`/${language}/`,site);const response=await context.request.get(url.href,{maxRedirects:0});const markup=await response.text();
+   if(!response.ok()||!markup.includes(`lang="${language}"`)||!markup.includes(url.href)||!markup.includes('rel="canonical"'))throw new Error('A live language home is missing or stale');
+  }
+  const rows=JSON.parse(await readFile(`${work}/snapshot.json`,'utf8'));
+  const sitemap=await context.request.get(new URL('/sitemap.xml',site).href,{maxRedirects:0});const xml=await sitemap.text();
+  if(!sitemap.ok()||!xml.includes('<urlset'))throw new Error('Live sitemap is unavailable');
+  for(const post of rows){const url=new URL(`/${post.language}/post/${encodeURIComponent(post.slug)}/`,site);if(!xml.includes(url.href))throw new Error('A published article is missing from the live sitemap');}
+  const samples=[rows[0],rows.at(-1)].filter(Boolean);
+  for(const post of samples){const url=new URL(`/${post.language}/post/${encodeURIComponent(post.slug)}/`,site);const response=await context.request.get(url.href,{maxRedirects:0});const markup=await response.text();if(!response.ok()||!markup.includes(url.href)||!markup.includes(`lang="${post.language}"`))throw new Error('A published article page failed live verification');}
+  console.log(`Verified 15 live language homes, ${rows.length} article sitemap entries and representative article HTML.`);
  } else throw new Error('Unknown delivery stage');
 } finally{await browser.close();}
