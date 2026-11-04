@@ -8,8 +8,13 @@ on:
         description: 'Generate and validate only; do not publish or deploy'
         type: boolean
         default: true
+      resume_run_id:
+        description: 'Optional earlier main-branch AI run ID; reuse completed content and image'
+        type: string
+        default: ''
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: rezan-ai-blog
   cancel-in-progress: false
@@ -30,6 +35,8 @@ jobs:
     timeout-minutes: 100
     outputs:
       has_topic: ${{ steps.topic.outputs.has_topic }}
+      resume_cover: ${{ steps.resume.outputs.cover || 'false' }}
+      resume_languages: ${{ steps.resume.outputs.languages || '[]' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,7 +60,23 @@ jobs:
           REZAN_FTP_PASSWORD: ${{ secrets.REZAN_FTP_PASSWORD }}
           REZAN_FTP_DIRECTORY: rezan.space/htdocs
         run: python automation/deploy.py --check
+      - name: Validate the source run and retained checkpoints
+        if: inputs.resume_run_id != ''
+        id: resume
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESUME_RUN_ID: ${{ inputs.resume_run_id }}
+        run: python automation/resume.py
+      - name: Reuse the completed English article and source packet
+        if: inputs.resume_run_id != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: blog-base
+          path: work/blog
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.resume_run_id }}
       - name: Restore this run's generation checkpoint on a retry
+        if: ${{ github.run_attempt > 1 && inputs.resume_run_id == '' }}
         continue-on-error: true
         uses: actions/download-artifact@v4
         with:
@@ -112,7 +135,16 @@ jobs:
         with:
           name: blog-base
           path: work/blog
+      - name: Reuse the source run's completed illustration
+        if: ${{ inputs.resume_run_id != '' && needs.prepare.outputs.resume_cover == 'true' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: blog-cover
+          path: work/blog
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.resume_run_id }}
       - name: Generate a relevant illustration with SSD-1B on a separate runner
+        if: ${{ needs.prepare.outputs.resume_cover != 'true' }}
         run: |
           pip install -r automation/requirements.txt
           pip install --no-cache-dir 'torch==2.7.1' --index-url https://download.pytorch.org/whl/cpu
@@ -132,7 +164,7 @@ jobs:
     timeout-minutes: 70
     strategy:
       fail-fast: false
-      max-parallel: 4
+      max-parallel: 15
       matrix:
         language: [en, es, pt-BR, hi, id, ar, fr, de, ja, bn, vi, tr, ko, it, pl]
     steps:
@@ -148,7 +180,16 @@ jobs:
         with:
           name: blog-base
           path: work/blog
+      - name: Reuse this language if it already finished in the source run
+        if: ${{ inputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_languages), matrix.language) }}
+        uses: actions/download-artifact@v4
+        with:
+          name: blog-language-${{ matrix.language }}
+          path: work/blog
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.resume_run_id }}
       - uses: actions/cache/restore@v4
+        if: ${{ !contains(fromJSON(needs.prepare.outputs.resume_languages), matrix.language) }}
         with:
           path: .cache/huggingface/hub/models--unsloth--Qwen3-4B-Instruct-2507-GGUF
           key: qwen-a06e946bb6b655725eafa393f4a9745d460374c9-cpu-v1
@@ -156,8 +197,9 @@ jobs:
         env:
           BLOG_LANGUAGE: ${{ matrix.language }}
         run: |
-          pip install -r automation/requirements.txt -r automation/requirements-text.txt
-          if [ "$BLOG_LANGUAGE" != en ]; then
+          pip install -r automation/requirements.txt
+          if [ ! -f "work/blog/$BLOG_LANGUAGE.json" ]; then
+            pip install -r automation/requirements-text.txt
             python -u automation/blog.py translate --language "$BLOG_LANGUAGE"
           fi
       - uses: actions/upload-artifact@v4

@@ -30,7 +30,7 @@ Source URLs determine stable slugs and translation keys. Retries use
 `on_conflict: skip`; image filenames use a content hash. A source already
 published is skipped on a later fresh run. Generation checkpoints/artifacts
 last seven days, so rerun failed jobs within that period. One workflow may run
-at a time; at most four translation workers run together.
+at a time; all fifteen translation workers may run together, subject to GitHub account capacity.
 
 Publishing sends all 15 posts in the existing database transaction. It then
 exports the entire public blog, builds real static HTML, deploys it over verified
@@ -94,3 +94,5 @@ quality cannot be established by unit tests alone.
 ## Rebuild and deploy without generating new AI content
 
 Run **Deploy live multilingual site** manually to verify HTTPS, export the migrated live API, rebuild all language pages from real published posts, upload over FTPS and check the live sitemap and pages. It shares a deployment lock with AI publishing and preserves the host configuration and user-uploaded media.
+
+To accelerate or recover a run, supply its ID as `resume_run_id`. The workflow verifies that it is this repository’s main-branch AI workflow, restores its English/source checkpoint, illustration and completed languages, and generates only missing outputs with a 15-worker matrix. An already-running workflow retains its original concurrency setting; start a checkpoint recovery run to apply the new limit.

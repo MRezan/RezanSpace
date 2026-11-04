@@ -14,6 +14,16 @@ def article():
 
 class BlogTests(unittest.TestCase):
  def setUp(self):self.manifest={'key':blog.source_key('https://www.nasa.gov/example/'),'category':'Science','sources':[{'id':1,'url':'https://www.nasa.gov/example/','title':'NASA source','text':'Source evidence'}]}
+ def test_resume_reuses_completed_content_only_from_the_main_ai_workflow(self):
+  import sys
+  with patch.dict(sys.modules,{'blog':blog}):
+   resume_spec=importlib.util.spec_from_file_location('resume',ROOT/'resume.py')
+   resume=importlib.util.module_from_spec(resume_spec);resume_spec.loader.exec_module(resume)
+  run={'head_repository':{'full_name':'MRezan/RezanSpace'},'head_branch':'main','event':'workflow_dispatch','path':'.github/workflows/ai-blog.yml'}
+  artifacts=[{'name':'blog-base'},{'name':'blog-cover'},{'name':'blog-language-en'},{'name':'blog-language-bn','expired':True}]
+  self.assertEqual(resume.validate_checkpoint(run,artifacts,'MRezan/RezanSpace'),{'cover':True,'languages':['en']})
+  run['head_branch']='untrusted'
+  with self.assertRaises(ValueError):resume.validate_checkpoint(run,artifacts,'MRezan/RezanSpace')
  def test_section_generation_assembles_only_evidence_linked_content(self):
   outline=article();outline['sections']=[{'heading':'A useful explanation '+str(i)} for i in range(5)]
   calls=[]
