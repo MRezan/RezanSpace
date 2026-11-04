@@ -96,3 +96,7 @@ quality cannot be established by unit tests alone.
 Run **Deploy live multilingual site** manually to verify HTTPS, export the migrated live API, rebuild all language pages from real published posts, upload over FTPS and check the live sitemap and pages. It shares a deployment lock with AI publishing and preserves the host configuration and user-uploaded media.
 
 To accelerate or recover a run, supply its ID as `resume_run_id`. The workflow verifies that it is this repository’s main-branch AI workflow, restores its English/source checkpoint, illustration and completed languages, and generates only missing outputs with a 15-worker matrix. An already-running workflow retains its original concurrency setting; start a checkpoint recovery run to apply the new limit.
+
+### Hosting certificate chain
+
+InfinityFree serves the Google Trust WR1 leaf without its intermediate. `automation/certs/google-wr1.pem` is the public intermediate from `https://i.pki.goog/wr1.crt`. Actions supply it as a chain-building certificate alongside the default trusted roots; hostname, expiry, signatures and root trust remain verified. This does not fix the provider’s missing chain for other non-browser clients.

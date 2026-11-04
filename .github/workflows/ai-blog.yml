@@ -21,6 +21,7 @@ concurrency:
 env:
   BLOG_WORK_DIR: work/blog
   REZAN_SITE_URL: https://rezan.space
+  NODE_EXTRA_CA_CERTS: ${{ github.workspace }}/automation/certs/google-wr1.pem
   HF_HOME: ${{ github.workspace }}/.cache/huggingface
   HF_HUB_DISABLE_XET: '1'
   OMP_NUM_THREADS: '4'
