@@ -1,4 +1,5 @@
 'use client';
+import {useUi} from './ui-language';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -8,6 +9,7 @@ const API = process.env.NEXT_PUBLIC_API_URL || 'https://rezan.space';
 type Person = { id?:number; name:string; bio:string; post_count:number; follower_count:number };
 
 export function PeopleSuggestions() {
+ const {tr}=useUi();
   const [people, setPeople] = useState<Person[]>([]);
   useEffect(() => {
     const token = localStorage.getItem('rezantech_session');
@@ -16,7 +18,7 @@ export function PeopleSuggestions() {
       .then(data => setPeople(data.data || []))
       .catch(() => setPeople([]));
   }, []);
-  return <section><h3>People to follow</h3>{people.map((person,index) => <div className="suggest" key={person.name}>
+  return <section><h3>{tr("People to follow")}</h3>{people.map((person,index) => <div className="suggest" key={person.name}>
     <Link className={`avatar a${index}`} href={`/author/?name=${encodeURIComponent(person.name)}`}>{person.name[0]}</Link>
     <p><Link href={`/author/?name=${encodeURIComponent(person.name)}`}><b>{person.name}</b></Link><small>{person.bio || `${person.post_count} published stories`}</small></p>
     <FollowButton author={person.name} compact/>

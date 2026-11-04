@@ -1,8 +1,10 @@
 'use client';
+import {useUi} from './ui-language';
 
 import { useState } from 'react';
 
 export function ShareButton({ url, title, compact = false }: { url?:string; title?:string; compact?:boolean }) {
+ const {tr}=useUi();
   const [message, setMessage] = useState('');
 
   async function share() {
@@ -35,7 +37,7 @@ export function ShareButton({ url, title, compact = false }: { url?:string; titl
   }
 
   return <button type="button" className={`share-story ${compact ? 'compact' : ''}`} onClick={share} aria-label="Share story" title={message || 'Share story'}>
-    <span className="share-icon" aria-hidden="true" />{!compact && <em>Share</em>}
+    <span className="share-icon" aria-hidden="true" />{!compact && <em>{tr("Share")}</em>}
     {message && <i className="action-toast">{message}</i>}
   </button>;
 }

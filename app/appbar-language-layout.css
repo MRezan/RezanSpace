@@ -25,3 +25,9 @@
   .user-appbar .account-menu-language .language-switcher > span {display:block}
   .user-appbar .account-menu-language select {width:125px;min-height:40px}
 }
+.sr-only {position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.feed-empty {background:#fff;border:1px solid #e5e9ef;border-radius:14px;padding:32px 24px;text-align:center;color:#718083}
+.feed-empty h2 {font-size:18px;color:#172f38;line-height:1.5}
+.user-appbar > nav small {text-align:center;white-space:normal;line-height:1.2}
+[dir=rtl] .social-left,[dir=rtl] .social-card,[dir=rtl] .social-right {text-align:right}
+[dir=rtl] .account-menu,[dir=rtl] .notifications-menu {right:auto;left:0}

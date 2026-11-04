@@ -1,10 +1,12 @@
 'use client';
+import {useUi} from './ui-language';
 
 import { useEffect, useState } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://rezan.space';
 
 export function FollowButton({ author, initial = false, compact = false }: { author:string; initial?:boolean; compact?:boolean }) {
+ const {tr}=useUi();
   const [following, setFollowing] = useState(initial);
   const [busy, setBusy] = useState(false);
 
@@ -35,5 +37,5 @@ export function FollowButton({ author, initial = false, compact = false }: { aut
     finally { setBusy(false); }
   }
 
-  return <button type="button" className={`follow-button ${following ? 'following' : ''} ${compact ? 'compact' : ''}`} onClick={toggle} disabled={busy} aria-pressed={following}>{busy ? '…' : following ? 'Following' : 'Follow'}</button>;
+  return <button type="button" className={`follow-button ${following ? 'following' : ''} ${compact ? 'compact' : ''}`} onClick={toggle} disabled={busy} aria-pressed={following}>{busy ? '…' : following ? tr('Following') : tr('Follow')}</button>;
 }

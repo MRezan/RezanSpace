@@ -1,10 +1,12 @@
 'use client';
+import {useUi} from './ui-language';
 
 import { useEffect, useState } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://rezan.space';
 
 export function SaveButton({ slug, compact = false }: { slug:string; compact?:boolean }) {
+ const {tr}=useUi();
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -41,6 +43,6 @@ export function SaveButton({ slug, compact = false }: { slug:string; compact?:bo
   }
 
   return <button type="button" className={`save-story ${saved ? 'saved' : ''} ${compact ? 'compact' : ''}`} onClick={toggle} disabled={busy} aria-label={saved ? 'Remove from saved stories' : 'Save story'} title={message || (saved ? 'Saved to your library' : 'Save to your library')}>
-    <span className="bookmark-icon" aria-hidden="true" />{!compact && <em>Save</em>}
+    <span className="bookmark-icon" aria-hidden="true" />{!compact && <em>{tr("Save")}</em>}
   </button>;
 }

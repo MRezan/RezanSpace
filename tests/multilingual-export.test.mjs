@@ -10,3 +10,8 @@ test('unrelated story does not pretend to be a translation',async()=>{const page
 test('sitemap and robots use the same public origin and no fabricated articles',async()=>{const xml=await readFile(new URL('../out/sitemap.xml',import.meta.url),'utf8');assert.equal((xml.match(/<url>/g)||[]).length,26);assert.ok(xml.includes('https://example.com/bn/post/solar-energy-bn/'));assert.ok(!xml.includes('/fr/post/'));assert.ok(!xml.includes('localhost'));const robots=await readFile(new URL('../out/robots.txt',import.meta.url),'utf8');assert.ok(robots.includes('Sitemap: https://example.com/sitemap.xml'));});
 
 test("legacy same-site cover URLs upgrade to HTTPS and retain descriptive alt text",async()=>{const page=await html("en/post/solar-energy-en");assert.ok(page.includes('src="https://example.com/uploads/solar-cover.webp"'));assert.ok(page.includes('alt="An illustrative solar panel"'));assert.ok(!page.includes('src="http://example.com/uploads/solar-cover.webp"'));});
+
+test('every language reuses the social app shell and renders only its authored stories',async()=>{
+ for(const locale of locales){const page=await html(locale);for(const marker of ['user-appbar','social-layout','social-left','social-center','social-right','composer','feed-tabs'])assert.ok(page.includes(marker),`${locale}: missing shared ${marker}`);assert.ok(!page.includes('class="language-header"'));}
+ const bn=await html('bn');assert.ok(bn.includes('প্রচ্ছদ'));assert.ok(bn.includes('সৌর'));assert.ok(!bn.includes('Solar panels convert sunlight'));
+});
