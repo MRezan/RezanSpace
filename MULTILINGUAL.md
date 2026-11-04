@@ -1,7 +1,7 @@
 # Multilingual publishing and search
 
 Public language homes: `/en/`, `/es/`, `/pt-BR/`, `/hi/`, `/id/`, `/ar/`, `/fr/`, `/de/`, `/ja/`, `/bn/`, `/vi/`, `/tr/`, `/ko/`, `/it/`, `/pl/`.
-Posts: `/{language}/post/{slug}/`. Arabic pages render right to left. The root is a language directory and community timeline. Account, moderation and writing tools keep their existing URLs.
+Posts: `/{language}/post/{slug}/`. Arabic pages render right to left. The root and all language homes reuse the same community timeline, header, navigation, sidebar and social components. Only UI copy and language-filtered posts change; there is no separate language-specific design. Account, moderation and writing tools keep their existing URLs.
 
 ## Deploying an existing installation
 
@@ -36,4 +36,4 @@ Pages contain server-rendered text, correct document lang/dir, self-referencing 
 
 A language menu selects a language home. On translated stories, additional links open the actual equivalent article. No language is forced based on IP or browser settings.
 
-Run `npm run test:i18n` for a fixture build plus 19 HTML/export checks and the PHP sitemap checks. This uses synthetic posts and example.com; do not deploy its `out/` directory. Always run a production build against your real migrated data before deployment.
+Run `npm run test:i18n` for a fixture build plus 20 HTML/export checks and the PHP sitemap checks. This uses synthetic posts and example.com; do not deploy its `out/` directory. Always run a production build against your real migrated data before deployment.
