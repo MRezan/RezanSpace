@@ -1,6 +1,52 @@
 [
- {"id":1,"slug":"solar-energy-en","language":"en","translation_key":"solar","title":"Solar energy explained","excerpt":"How sunlight becomes electricity.","content":"<p>Solar panels convert sunlight into electricity.</p>","author":"Test Writer","category_name":"Science","published_at":"2026-10-01T00:00:00Z","updated_at":"2026-10-02T00:00:00Z"},
- {"id":2,"slug":"solar-energy-bn","language":"bn","translation_key":"solar","title":"সৌরশক্তির পরিচয়","excerpt":"সূর্যের আলো থেকে বিদ্যুৎ।","content":"<p>সৌর প্যানেল সূর্যের আলোকে বিদ্যুতে রূপান্তর করে।</p>","author":"Test Writer","category_name":"Science","published_at":"2026-10-01T00:00:00Z"},
- {"id":3,"slug":"solar-energy-ar","language":"ar","translation_key":"solar","title":"شرح الطاقة الشمسية","excerpt":"كيف يتحول ضوء الشمس إلى كهرباء.","content":"<p>تحول الألواح الشمسية ضوء الشمس إلى كهرباء.</p>","author":"Test Writer","category_name":"Science","published_at":"2026-10-01T00:00:00Z"},
- {"id":4,"slug":"independent-story","language":"es","title":"Una historia independiente","excerpt":"Una historia original en español.","content":"<p>Este texto no es una traducción.</p>","author":"Test Writer","category_name":"Culture","published_at":"2026-10-03T00:00:00Z"}
+  {
+    "id": 1,
+    "slug": "solar-energy-en",
+    "language": "en",
+    "translation_key": "solar",
+    "title": "Solar energy explained",
+    "excerpt": "How sunlight becomes electricity.",
+    "content": "<p>Solar panels convert sunlight into electricity.</p>",
+    "author": "Test Writer",
+    "category_name": "Science",
+    "published_at": "2026-10-01T00:00:00Z",
+    "updated_at": "2026-10-02T00:00:00Z",
+    "image_url": "http://example.com/uploads/solar-cover.webp",
+    "image_alt": "An illustrative solar panel"
+  },
+  {
+    "id": 2,
+    "slug": "solar-energy-bn",
+    "language": "bn",
+    "translation_key": "solar",
+    "title": "সৌরশক্তির পরিচয়",
+    "excerpt": "সূর্যের আলো থেকে বিদ্যুৎ।",
+    "content": "<p>সৌর প্যানেল সূর্যের আলোকে বিদ্যুতে রূপান্তর করে।</p>",
+    "author": "Test Writer",
+    "category_name": "Science",
+    "published_at": "2026-10-01T00:00:00Z"
+  },
+  {
+    "id": 3,
+    "slug": "solar-energy-ar",
+    "language": "ar",
+    "translation_key": "solar",
+    "title": "شرح الطاقة الشمسية",
+    "excerpt": "كيف يتحول ضوء الشمس إلى كهرباء.",
+    "content": "<p>تحول الألواح الشمسية ضوء الشمس إلى كهرباء.</p>",
+    "author": "Test Writer",
+    "category_name": "Science",
+    "published_at": "2026-10-01T00:00:00Z"
+  },
+  {
+    "id": 4,
+    "slug": "independent-story",
+    "language": "es",
+    "title": "Una historia independiente",
+    "excerpt": "Una historia original en español.",
+    "content": "<p>Este texto no es una traducción.</p>",
+    "author": "Test Writer",
+    "category_name": "Culture",
+    "published_at": "2026-10-03T00:00:00Z"
+  }
 ]

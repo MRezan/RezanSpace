@@ -17,6 +17,8 @@ The generated explanation links its sources, uses transparent AI authorship,
 checks its language and structure, and passes a second Qwen evidence review.
 This is a model consistency check, not independent human fact-checking.
 
+Text and image models run in separate jobs so their large weight files do not compete for runner disk space. Image generation and translations run concurrently after the English original is validated.
+
 One English original and fourteen faithful localized translations share a
 translation key and illustration. Localized image alt text is stored per post.
 The pipeline publishes only when all fifteen texts pass validation; no missing

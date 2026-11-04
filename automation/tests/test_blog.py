@@ -14,6 +14,25 @@ def article():
 
 class BlogTests(unittest.TestCase):
  def setUp(self):self.manifest={'key':blog.source_key('https://www.nasa.gov/example/'),'category':'Science','sources':[{'id':1,'url':'https://www.nasa.gov/example/','title':'NASA source','text':'Source evidence'}]}
+ def test_section_generation_assembles_only_evidence_linked_content(self):
+  outline=article();outline['sections']=[{'heading':'A useful explanation '+str(i)} for i in range(5)]
+  calls=[]
+  def fake_request(messages,schema,budget):
+   calls.append(budget)
+   if budget==1800:return copy.deepcopy(outline)
+   if budget==2000:return {'paragraphs':[article()['sections'][0]['paragraphs'][0]]*2}
+   if budget==1000:return {'approved':True,'issues':''}
+   raise AssertionError('Unexpected generation stage')
+  with patch.object(blog,'request',side_effect=fake_request),patch('langid.classify',return_value=('en',1)):
+   generated=blog.generate(self.manifest,'en')
+  self.assertEqual(calls.count(2000),5)
+  self.assertTrue(all(section['source_ids']==[1] for section in generated['sections']))
+  blog.validate_article(generated,'en',self.manifest,False)
+ def test_metadata_snippets_are_bounded_without_changing_body(self):
+  text='A useful descriptive sentence. '*20
+  self.assertLessEqual(len(blog.metadata_text(text,170)),170)
+  self.assertTrue(blog.metadata_text(text,170).endswith('…'))
+  self.assertEqual(blog.metadata_text('Short title',140),'Short title')
  def test_native_grammar_does_not_expand_long_string_bounds(self):
   adapter_spec=importlib.util.spec_from_file_location('qwen_adapter',ROOT/'vendor/qwen_cpu.py')
   adapter=importlib.util.module_from_spec(adapter_spec);adapter_spec.loader.exec_module(adapter)

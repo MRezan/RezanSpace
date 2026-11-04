@@ -36,4 +36,4 @@ Pages contain server-rendered text, correct document lang/dir, self-referencing 
 
 A language menu selects a language home. On translated stories, additional links open the actual equivalent article. No language is forced based on IP or browser settings.
 
-Run `npm run test:i18n` for a fixture build plus 18 HTML/export checks and the PHP sitemap checks. This uses synthetic posts and example.com; do not deploy its `out/` directory. Always run a production build against your real migrated data before deployment.
+Run `npm run test:i18n` for a fixture build plus 19 HTML/export checks and the PHP sitemap checks. This uses synthetic posts and example.com; do not deploy its `out/` directory. Always run a production build against your real migrated data before deployment.

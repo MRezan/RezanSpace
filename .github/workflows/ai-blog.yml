@@ -85,13 +85,7 @@ jobs:
         run: |
           pip install -r automation/requirements-text.txt
           python -u automation/blog.py english
-      - name: Generate a relevant illustration with SSD-1B
-        if: steps.topic.outputs.has_topic == 'true'
-        run: |
-          pip install 'torch==2.7.1' --index-url https://download.pytorch.org/whl/cpu
-          pip install -r automation/requirements-image.txt
-          python -u automation/blog.py image
-      - name: Save source, English article and illustration checkpoint
+      - name: Save source and English article checkpoint
         if: ${{ always() && steps.topic.outputs.has_topic == 'true' }}
         uses: actions/upload-artifact@v4
         with:
@@ -99,7 +93,35 @@ jobs:
           path: |
             work/blog/manifest.json
             work/blog/en.json
-            work/blog/cover.webp
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 7
+  illustrate:
+    needs: prepare
+    if: needs.prepare.outputs.has_topic == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: blog-base
+          path: work/blog
+      - name: Generate a relevant illustration with SSD-1B on a separate runner
+        run: |
+          pip install -r automation/requirements.txt
+          pip install --no-cache-dir 'torch==2.7.1' --index-url https://download.pytorch.org/whl/cpu
+          pip install --no-cache-dir -r automation/requirements-image.txt
+          python -u automation/blog.py image
+      - uses: actions/upload-artifact@v4
+        with:
+          name: blog-cover
+          path: work/blog/cover.webp
           if-no-files-found: error
           overwrite: true
           retention-days: 7
@@ -146,7 +168,7 @@ jobs:
           overwrite: true
           retention-days: 7
   publish:
-    needs: [prepare, translate]
+    needs: [prepare, translate, illustrate]
     if: needs.prepare.outputs.has_topic == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
@@ -163,6 +185,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: blog-base
+          path: work/blog
+      - uses: actions/download-artifact@v4
+        with:
+          name: blog-cover
           path: work/blog
       - uses: actions/download-artifact@v4
         with:

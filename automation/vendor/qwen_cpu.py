@@ -132,7 +132,7 @@ def request_story(endpoint, payload):
                 'seconds': round(time.monotonic() - started, 1)}), flush=True)
             feedback = ('The previous response failed validation at schema path ' + path +
                 ' (' + str(reason) + '). Generate a fresh COMPLETE object. Keep every string concise. '
-                'Respect maxLength even for strings with a pattern; thumbnail questions must be at most 30 characters. '
+                'Respect field types and array structure. Keep body paragraphs informative; do not shorten them to fix metadata. '
                 'Do not repeat the invalid response or add commentary.')
             if attempt == 2:
                 raise StoryGenerationError('Qwen returned incomplete or invalid script JSON after three attempts') from None
