@@ -43,6 +43,23 @@ const topicNames:Record<Locale,readonly string[]>={
  it:['Tecnologia','Economia','Scienza','Salute','Cultura','Istruzione','Stile di vita','Finanza','Viaggi','Ambiente'],
  pl:['Technologia','Biznes','Nauka','Zdrowie','Kultura','Edukacja','Styl życia','Finanse','Podróże','Środowisko'],
 };
-export function topicLabel(locale:Locale,topic:string){const index=topicNames.en.indexOf(topic);return index<0?topic:topicNames[locale][index];}
+const expandedTopicNames:Record<Locale,readonly string[]>={
+ en:['Tech How-to & Troubleshooting','Food & Recipes','DIY, Crafts & Hobbies','Sports','Entertainment','Travel Planning'],
+ bn:['প্রযুক্তি নির্দেশিকা ও সমস্যা সমাধান','খাবার ও রেসিপি','নিজে তৈরি, হস্তশিল্প ও শখ','খেলাধুলা','বিনোদন','ভ্রমণ পরিকল্পনা'],
+ es:['Guías y solución de problemas técnicos','Comida y recetas','Bricolaje, manualidades y aficiones','Deportes','Entretenimiento','Planificación de viajes'],
+ 'pt-BR':['Guias e solução de problemas técnicos','Comida e receitas','Faça você mesmo, artesanato e hobbies','Esportes','Entretenimento','Planejamento de viagens'],
+ hi:['तकनीकी मार्गदर्शिका और समस्या समाधान','खाना और रेसिपी','खुद बनाएँ, हस्तकला और शौक','खेल','मनोरंजन','यात्रा की योजना'],
+ id:['Panduan teknologi dan pemecahan masalah','Makanan dan resep','DIY, kerajinan dan hobi','Olahraga','Hiburan','Perencanaan perjalanan'],
+ ar:['إرشادات التقنية وحل المشكلات','الطعام والوصفات','الأعمال اليدوية والحرف والهوايات','الرياضة','الترفيه','تخطيط السفر'],
+ fr:['Guides techniques et dépannage','Cuisine et recettes','Bricolage, loisirs créatifs et passions','Sports','Divertissement','Organisation de voyages'],
+ de:['Technikanleitungen und Fehlerbehebung','Essen und Rezepte','Heimwerken, Basteln und Hobbys','Sport','Unterhaltung','Reiseplanung'],
+ ja:['技術ガイドとトラブル対処','料理とレシピ','DIY・手芸・趣味','スポーツ','エンタメ','旅行計画'],
+ vi:['Hướng dẫn công nghệ và khắc phục sự cố','Ẩm thực và công thức','Tự làm, thủ công và sở thích','Thể thao','Giải trí','Lập kế hoạch du lịch'],
+ tr:['Teknoloji rehberleri ve sorun giderme','Yemek ve tarifler','Kendin yap, el işleri ve hobiler','Spor','Eğlence','Seyahat planlama'],
+ ko:['기술 가이드 및 문제 해결','음식과 레시피','DIY, 공예 및 취미','스포츠','엔터테인먼트','여행 계획'],
+ it:['Guide tecniche e risoluzione dei problemi','Cucina e ricette','Fai da te, artigianato e hobby','Sport','Intrattenimento','Pianificazione viaggi'],
+ pl:['Poradniki techniczne i rozwiązywanie problemów','Jedzenie i przepisy','Majsterkowanie, rękodzieło i hobby','Sport','Rozrywka','Planowanie podróży'],
+};
+export function topicLabel(locale:Locale,topic:string){const index=topicNames.en.indexOf(topic);if(index>=0)return topicNames[locale][index];const extra=expandedTopicNames.en.indexOf(topic);return extra<0?topic:expandedTopicNames[locale][extra];}
 const noMatches:Record<Locale,string>={en:'No matching stories.',es:'No se encontraron historias.', 'pt-BR':'Nenhuma história encontrada.',hi:'कोई मेल खाता लेख नहीं मिला।',id:'Tidak ada cerita yang cocok.',ar:'لم يتم العثور على قصص مطابقة.',fr:'Aucune histoire correspondante.',de:'Keine passenden Beiträge gefunden.',ja:'一致する記事はありません。',bn:'মিল আছে এমন কোনো লেখা পাওয়া যায়নি।',vi:'Không tìm thấy bài viết phù hợp.',tr:'Eşleşen yazı bulunamadı.',ko:'일치하는 글이 없습니다.',it:'Nessuna storia corrispondente.',pl:'Nie znaleziono pasujących artykułów.'};
 export const noMatchesLabel=(locale:Locale)=>noMatches[locale];

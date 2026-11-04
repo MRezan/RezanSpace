@@ -37,3 +37,9 @@ Pages contain server-rendered text, correct document lang/dir, self-referencing 
 A language menu selects a language home. On translated stories, additional links open the actual equivalent article. No language is forced based on IP or browser settings.
 
 Run `npm run test:i18n` for a fixture build plus 20 HTML/export checks and the PHP sitemap checks. This uses synthetic posts and example.com; do not deploy its `out/` directory. Always run a production build against your real migrated data before deployment.
+
+## Editorial categories
+
+The shared taxonomy includes Food & Recipes; DIY, Crafts & Hobbies; Sports; Technology → Tech How-to & Troubleshooting; Culture → Entertainment; and Travel → Travel Planning. Apply `backend/category-expansion-migration.sql` once before deploying the updated category API on an existing database. Fresh schemas include these entries and parent relationships. Existing posts keep their category IDs. Parent filters include immediate child categories; child filters remain specific. UI labels are localized while stored category names remain canonical. Adding a category does not invent posts or configure new AI source feeds.
+
+Run `npm run test:categories` to verify the hierarchy, parent filtering and all 15 languages’ additional labels.

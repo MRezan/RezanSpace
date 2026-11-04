@@ -31,3 +31,4 @@
 .user-appbar > nav small {text-align:center;white-space:normal;line-height:1.2}
 [dir=rtl] .social-left,[dir=rtl] .social-card,[dir=rtl] .social-right {text-align:right}
 [dir=rtl] .account-menu,[dir=rtl] .notifications-menu {right:auto;left:0}
+.social-left .side-topic.is-subcategory {padding-inline-start:32px;font-size:11px}

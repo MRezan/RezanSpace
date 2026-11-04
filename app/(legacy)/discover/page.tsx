@@ -7,11 +7,13 @@ import { FollowButton } from '../../follow-button';
 import { ExpandableText } from '../../expandable-text';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://rezan.space';
-import {categories} from '../../categories';
+import {useUi} from '../../ui-language';
+import {categories,categoryMatches,categoryOptionLabel} from '../../categories';
 const topics = ['All', ...categories];
 type Post = { id:number; slug:string; title:string; excerpt:string; image_url:string; author:string; published_at:string; category_name:string; like_count:number; comment_count:number };
 
 export default function Discover() {
+  const {locale,tr}=useUi();
   const [posts, setPosts] = useState<Post[]>([]);
   const [topic, setTopic] = useState('All');
   const [loading, setLoading] = useState(true);
@@ -22,14 +24,14 @@ export default function Discover() {
   useEffect(() => {
     setLoading(true);
     const category=topic==='All'?'':`&category=${encodeURIComponent(topic)}`;
-    fetch(`${API}/api/posts.php?page=${page}&limit=13${category}`)
+    fetch(`${API}/api/posts.php?page=${page}&limit=13&language=${locale}${category}`)
       .then(response => response.ok ? response.json() : Promise.reject())
       .then(result => {setPosts(result.data||[]);setPages(Math.max(1,Number(result.pagination?.pages||1)));setTotal(Number(result.pagination?.total||0))})
       .catch(() => {setPosts([]);setPages(1);setTotal(0)})
       .finally(() => setLoading(false));
-  }, [page,topic]);
+  }, [page,topic,locale]);
 
-  const filtered = useMemo(() => topic === 'All' ? posts : posts.filter(post => post.category_name === topic), [posts, topic]);
+  const filtered = useMemo(() => topic === 'All' ? posts : posts.filter(post => categoryMatches(topic,post.category_name)), [posts, topic]);
   const trending = useMemo(() => [...posts].sort((a, b) => (b.like_count + b.comment_count) - (a.like_count + a.comment_count)).slice(0, 5), [posts]);
   const writers = useMemo(() => Array.from(new Set(posts.map(post => post.author))).slice(0, 4), [posts]);
   const featured = filtered[0];
@@ -37,7 +39,7 @@ export default function Discover() {
   return <main className="discover-page">
     <section className="discover-hero"><div><span>EXPLORE WHAT’S NEXT</span><h1>Discover ideas<br/>worth understanding.</h1><p>Fresh stories, useful perspectives and thoughtful conversations across every topic in the REZAN community.</p></div><div className="discover-orbit"><i/><i/><b>R</b></div></section>
 
-    <nav className="discover-topics" aria-label="Filter by topic">{topics.map(item => <button key={item} className={topic === item ? 'active' : ''} onClick={() => {setTopic(item);setPage(1)}}>{item}</button>)}</nav>
+    <nav className="discover-topics" aria-label="Filter by topic">{topics.map(item => <button key={item} className={topic === item ? 'active' : ''} onClick={() => {setTopic(item);setPage(1)}}>{item==='All'?tr(item):categoryOptionLabel(item,locale)}</button>)}</nav>
 
     {loading ? <div className="discover-loading"><i/><p>Finding stories for you…</p></div> : <div className="discover-layout">
       <section className="discover-main">

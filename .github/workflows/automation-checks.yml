@@ -25,4 +25,7 @@ jobs:
           php -l backend/lib/automation-auth.php
       - run: |
           npm ci
+          npm run test:categories
+          php -l backend/api/categories.php
+          php -l backend/api/posts.php
           npm run test:i18n

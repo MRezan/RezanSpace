@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ChangeEvent, FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { posts as allStories } from '../../posts';
-import { categories } from '../../categories';
+import {CategoryOptions} from '../../category-options';
 import { RichTextEditor } from '../../rich-text-editor';
 import {useConfirmDialog} from '../../confirm-dialog';
 
@@ -171,7 +171,7 @@ export default function Profile() {
 }
 
 function StoryEditor({post,submit,cancel,phase}:{post:UserPost;submit:(event:FormEvent<HTMLFormElement>)=>void;cancel:()=>void;phase:'idle'|'saving'|'success'|'error'}){
- return <form className={`writer-form story-editor save-${phase}`} onSubmit={submit}><div><span className="kicker">EDIT STORY</span><h1>Improve your post.</h1><p>Update the headline, summary, category or formatted article text.</p></div><label>Headline<input name="title" required defaultValue={post.title}/></label><label>Category<select name="category" defaultValue={post.category_name}>{categories.map(category=><option key={category}>{category}</option>)}</select></label><label>Summary<textarea name="excerpt" required rows={3} defaultValue={post.excerpt}/></label><label>Story<RichTextEditor name="content" initialValue={post.content} placeholder="Write your complete article…"/></label><aside><button type="button" className="edit-cancel" disabled={phase==='saving'||phase==='success'} onClick={cancel}>Cancel</button><button className="animated-save" disabled={phase==='saving'||phase==='success'}><span className="save-idle">Save changes</span><span className="save-saving"><i/>Saving your update…</span><span className="save-success"><i>✓</i>Updated successfully</span></button></aside></form>;
+ return <form className={`writer-form story-editor save-${phase}`} onSubmit={submit}><div><span className="kicker">EDIT STORY</span><h1>Improve your post.</h1><p>Update the headline, summary, category or formatted article text.</p></div><label>Headline<input name="title" required defaultValue={post.title}/></label><label>Category<select name="category" defaultValue={post.category_name}><CategoryOptions/></select></label><label>Summary<textarea name="excerpt" required rows={3} defaultValue={post.excerpt}/></label><label>Story<RichTextEditor name="content" initialValue={post.content} placeholder="Write your complete article…"/></label><aside><button type="button" className="edit-cancel" disabled={phase==='saving'||phase==='success'} onClick={cancel}>Cancel</button><button className="animated-save" disabled={phase==='saving'||phase==='success'}><span className="save-idle">Save changes</span><span className="save-saving"><i/>Saving your update…</span><span className="save-success"><i>✓</i>Updated successfully</span></button></aside></form>;
 }
 
 function ProfileForm({ user, submit, setAvatar }: { user:User; submit:(event:FormEvent<HTMLFormElement>)=>void;setAvatar:(file:File|null)=>Promise<boolean> }) {
@@ -200,7 +200,7 @@ function Writer({ submit }: { submit:(event:FormEvent<HTMLFormElement>)=>void })
   return <form className="writer-form" onSubmit={submit}>
     <div><span className="kicker">COMMUNITY DESK</span><h1>Submit a story.</h1><p>Original, useful writing across the subjects you know and care about. Every submission is reviewed before publication.</p></div>
     <label>Headline<input name="title" required placeholder="A specific, compelling headline" /></label>
-    <div className="writer-two"><label>Category<select name="category">{categories.map(category=><option key={category}>{category}</option>)}</select></label><label>Suggested URL<input name="slug" placeholder="your-story-slug" /></label></div>
+    <div className="writer-two"><label>Category<select name="category"><CategoryOptions/></select></label><label>Suggested URL<input name="slug" placeholder="your-story-slug" /></label></div>
     <label>Summary<textarea name="excerpt" required rows={3} placeholder="Explain the central idea in one or two sentences." /></label>
     <label>Story<textarea name="content" required rows={16} placeholder="Write your complete article…" /></label>
     <aside><p><b>Before you submit</b><br/>Confirm the work is original, factual and yours to publish.</p><button>Submit for review</button></aside>

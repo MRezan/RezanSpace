@@ -7,7 +7,10 @@ SET NAMES utf8mb4;
 CREATE TABLE IF NOT EXISTS categories (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(80) NOT NULL UNIQUE,
-  slug VARCHAR(90) NOT NULL UNIQUE
+  slug VARCHAR(90) NOT NULL UNIQUE,
+  parent_id INT UNSIGNED NULL,
+  INDEX idx_category_parent(parent_id),
+  CONSTRAINT fk_category_parent FOREIGN KEY(parent_id) REFERENCES categories(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS users (
@@ -106,3 +109,13 @@ INSERT IGNORE INTO categories(name,slug) VALUES
 ('Finance','finance'),
 ('Travel','travel'),
 ('Environment','environment');
+
+-- Expanded editorial taxonomy
+INSERT IGNORE INTO categories(name,slug) VALUES
+ ('Tech How-to & Troubleshooting','tech-how-to-troubleshooting'),
+ ('Food & Recipes','food-recipes'),
+ ('DIY, Crafts & Hobbies','diy-crafts-hobbies'),
+ ('Sports','sports'),('Entertainment','entertainment'),('Travel Planning','travel-planning');
+UPDATE categories child JOIN categories parent ON parent.slug='technology' SET child.parent_id=parent.id WHERE child.slug='tech-how-to-troubleshooting';
+UPDATE categories child JOIN categories parent ON parent.slug='culture' SET child.parent_id=parent.id WHERE child.slug='entertainment';
+UPDATE categories child JOIN categories parent ON parent.slug='travel' SET child.parent_id=parent.id WHERE child.slug='travel-planning';
