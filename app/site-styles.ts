@@ -54,3 +54,5 @@ import "./rich-link-production.css";
 import "./rich-link-layer-fix.css";
 import "./(legacy)/post/article-redesign.css";
 import "./languages.css";
+
+import "./appbar-language-layout.css";

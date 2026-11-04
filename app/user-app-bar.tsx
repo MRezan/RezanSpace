@@ -131,7 +131,7 @@ export function UserAppBar() {
       <input ref={searchInput} value={query} onChange={event => setQuery(event.target.value)} placeholder="Search stories, people and topics" />
       <kbd>⌘ K</kbd>
     </form>
-    <nav>
+    <nav aria-label="Main navigation">
       <Link className={activePath === '/' ? 'active' : ''} href="/">⌂<small>Home</small></Link>
       <Link className={activePath.startsWith('/discover') ? 'active' : ''} href="/discover">◈<small>Discover</small></Link>
       <Link className={activePath.startsWith('/library') ? 'active' : ''} href={viewer ? '/library' : '/account'}>♧<small>Library</small></Link>
@@ -156,6 +156,7 @@ export function UserAppBar() {
         <Link href={viewer ? '/library' : '/account'}>♧ Saved posts</Link>
         {viewer && <Link href="/">✎ Create from timeline</Link>}
         {viewer&&(viewer.role==='admin'||viewer.role==='editor')&&<Link href="/admin">▦ Editorial workspace</Link>}
+        <div className="account-menu-language" onClick={event=>event.stopPropagation()}><LanguageSwitcher/></div>
         <hr />
         {viewer ? <button onClick={logout}>↗ Sign out</button> : <Link href="/account">→ Sign in</Link>}
       </div>}
