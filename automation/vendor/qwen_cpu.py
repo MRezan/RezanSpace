@@ -59,6 +59,20 @@ def load_model():
     return _model
 
 
+def inference_schema(schema):
+    """Keep native grammar shallow; enforce all string limits in Python validation.
+
+    llama.cpp expands bounded strings into deeply nested optional productions.
+    Long article paragraphs can crash the native grammar parser before inference.
+    """
+    if isinstance(schema, dict):
+        return {key: inference_schema(value) for key, value in schema.items()
+                if key not in {'minLength', 'maxLength'}}
+    if isinstance(schema, list):
+        return [inference_schema(value) for value in schema]
+    return schema
+
+
 def request_story(endpoint, payload):
     if endpoint != 'chat/completions':
         raise StoryGenerationError('Qwen supports script JSON generation only')
@@ -95,7 +109,7 @@ def request_story(endpoint, payload):
             attempt_messages.append({'role': 'user', 'content': feedback})
         try:
             result = model.create_chat_completion(messages=attempt_messages,
-                response_format={'type': 'json_object', 'schema': schema},
+                response_format={'type': 'json_object', 'schema': inference_schema(schema)},
                 max_tokens=limit, temperature=max(.2, float(payload.get('temperature', .7)) - .15 * attempt),
                 top_p=.8, top_k=20, repeat_penalty=1.05, seed=1700 + attempt)
         except Exception:

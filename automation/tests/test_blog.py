@@ -14,6 +14,15 @@ def article():
 
 class BlogTests(unittest.TestCase):
  def setUp(self):self.manifest={'key':blog.source_key('https://www.nasa.gov/example/'),'category':'Science','sources':[{'id':1,'url':'https://www.nasa.gov/example/','title':'NASA source','text':'Source evidence'}]}
+ def test_native_grammar_does_not_expand_long_string_bounds(self):
+  adapter_spec=importlib.util.spec_from_file_location('qwen_adapter',ROOT/'vendor/qwen_cpu.py')
+  adapter=importlib.util.module_from_spec(adapter_spec);adapter_spec.loader.exec_module(adapter)
+  native=adapter.inference_schema(blog.SCHEMA)
+  self.assertNotIn('maxLength',json.dumps(native));self.assertNotIn('minLength',json.dumps(native))
+  self.assertIn('maxLength',json.dumps(blog.SCHEMA))
+  value=article();value['title']='A'*141
+  from jsonschema import ValidationError
+  with self.assertRaises(ValidationError):blog.validate_article(value,'en',self.manifest,False)
  def test_fifteen_languages_match_frontend(self):
   self.assertEqual(len(blog.LANGUAGES),15)
   frontend=(ROOT.parent/'lib/i18n/locales.ts').read_text()
