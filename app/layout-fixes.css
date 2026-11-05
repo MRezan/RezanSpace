@@ -1,0 +1,32 @@
+/* Retain the original visual design; only fix layout and navigation defects. */
+@media(max-width:700px) {
+ /* A filtered ancestor traps fixed bottom navigation inside the app bar. */
+ .social-top.upgraded.user-appbar {backdrop-filter:none!important;transform:none!important;filter:none!important}
+}
+.social-left {max-height:calc(100dvh - 112px);overflow-y:auto;scrollbar-width:thin}
+/* Every sidebar topic has equal hierarchy, including former child categories. */
+.social-left .side-topic {padding-inline-start:10px}
+.cms .table-head {flex-wrap:wrap;gap:18px}
+.cms .inline-form {display:flex;flex-wrap:wrap;max-width:100%;gap:8px}
+.cms .inline-form input,.cms .inline-form select {min-width:0;max-width:100%;flex:1 1 160px}
+.cms .inline-form button {flex:0 0 auto}
+.cms .table-tools {flex-wrap:wrap;gap:12px}
+.cms .table-tools label {min-width:0;max-width:100%}
+.cms .table-tools input {max-width:100%;min-width:0}
+.cms .access-head-actions {display:flex;flex-wrap:wrap;gap:10px;max-width:100%}
+.cms .category-grid article {min-width:0}
+.cms .category-grid h3,.cms .category-grid p {overflow-wrap:anywhere}
+@media(max-width:760px) {
+ /* Legacy rules hid the navigation even while the mobile drawer was open. */
+ .cms .cms-side {flex-direction:column;align-items:stretch;overflow-y:auto}
+ .cms .cms-side nav {display:flex;flex-direction:column}
+ .cms .cms-side .workspace {display:block}
+ .cms .cms-side .side-bottom {display:block;margin-top:auto;padding-top:24px}
+}
+/* New SEO archives reuse the existing site's card styles. */
+.category-breadcrumb,.category-links {display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px}
+.category-breadcrumb {font-size:13px;color:#748092}
+.category-links a {padding:8px 12px;border:1px solid #e5e9ef;border-radius:9px;background:#fff;font-size:12px}
+.category-links a[aria-current] {color:#5965f5;background:#eef0ff}
+.category-page .language-intro h1 {margin-top:10px}
+.category-page .language-card footer {background:transparent;color:#748092;padding:12px 0 0;display:flex;flex-wrap:wrap;gap:10px}

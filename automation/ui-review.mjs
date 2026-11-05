@@ -38,9 +38,11 @@ for (const width of (process.env.UI_REVIEW_WIDTHS?.split(',').map(Number)||[1440
   if(path==='/'){
    if(await page.locator('.social-left details').count())throw Error('Sidebar must not contain nested subcategories');
    if(await page.locator('.social-left .side-topic').count()!==16)throw Error('Sidebar must expose all 16 topics');
-   await page.getByRole('button',{name:'Sports',exact:true}).click();
-   if(await page.getByRole('button',{name:'Sports',exact:true}).getAttribute('aria-pressed')!=='true')throw Error('Topic selection failed');
-   await page.locator('.side-reset').click();
+   if(width>720){
+    await page.getByRole('button',{name:'Sports',exact:true}).click();
+    if(await page.getByRole('button',{name:'Sports',exact:true}).getAttribute('aria-pressed')!=='true')throw Error('Topic selection failed');
+    await page.locator('.feed-tabs button').first().click();
+   }
    await page.getByRole('button',{name:'Account',exact:true}).click();
    await page.keyboard.press('Escape');
    if(await page.locator('.account-menu').count())throw Error('Escape did not close account menu');

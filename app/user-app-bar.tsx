@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import {Icon} from './icons';
 import {useUi} from './ui-language';
 import {localePath} from '../lib/i18n/locales';
 import {LanguageSwitcher} from './language-switcher';
@@ -131,18 +130,18 @@ export function UserAppBar() {
       <Link href={localePath(locale)} className="app-wordmark">{tr("REZAN")}</Link>
     </div>
     <form className="app-search" onSubmit={search}>
-      <span><Icon name="search"/></span>
+      <span>⌕</span>
       <input ref={searchInput} value={query} onChange={event => setQuery(event.target.value)} aria-label={tr('Search stories, people and topics')} placeholder={tr('Search stories, people and topics')} />
       <kbd>{tr("⌘ K")}</kbd>
     </form>
     <nav aria-label="Main navigation">
-      <Link aria-current={(activePath === '/' || activePath === `/${locale}`) ? 'page' : undefined} className={(activePath === '/' || activePath === `/${locale}`) ? 'active' : ''} href={localePath(locale)}><Icon name="home"/><small>{tr("Home")}</small></Link>
-      <Link aria-current={activePath.startsWith('/discover') ? 'page' : undefined} className={activePath.startsWith('/discover') ? 'active' : ''} href="/discover"><Icon name="compass"/><small>{tr("Discover")}</small></Link>
-      <Link aria-current={activePath.startsWith('/library') ? 'page' : undefined} className={activePath.startsWith('/library') ? 'active' : ''} href={viewer ? '/library' : '/account'}><Icon name="bookmark"/><small>{tr("Library")}</small></Link>
+      <Link className={(activePath === '/' || activePath === `/${locale}`) ? 'active' : ''} href={localePath(locale)}>⌂<small>{tr("Home")}</small></Link>
+      <Link className={activePath.startsWith('/discover') ? 'active' : ''} href="/discover">◈<small>{tr("Discover")}</small></Link>
+      <Link className={activePath.startsWith('/library') ? 'active' : ''} href={viewer ? '/library' : '/account'}>♧<small>{tr("Library")}</small></Link>
     </nav>
     <div className="app-actions" ref={appActions}><LanguageSwitcher/>
       <button className="notice" aria-label={tr('Notifications')} aria-expanded={noticesOpen} onClick={toggleNotices}>
-        <Icon name="bell"/>
+        <span className="bell-shape">●</span>
         {unread > 0 && <i>{unread > 9 ? '9+' : unread}</i>}
       </button>
       {noticesOpen && <div className="notifications-menu">

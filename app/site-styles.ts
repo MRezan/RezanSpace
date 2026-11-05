@@ -57,4 +57,4 @@ import "./languages.css";
 
 import "./appbar-language-layout.css";
 
-import "./design-system.css";
+import "./layout-fixes.css";

@@ -92,22 +92,15 @@ Keep `api-publisher.html` available only when publishing automation is needed. K
 
 See [AUTOMATION.md](AUTOMATION.md) for CPU Qwen writing, SSD-1B illustrations, all 15 languages, source/evidence checks, scheduled GitHub Actions and verified FTPS deployment. Live schedules are gated by `AUTO_PUBLISH_ENABLED` until HTTPS, database migration and hosting secrets are configured.
 
-## Shared UI design
+## UI maintenance
 
-The site-wide presentation layer is `app/design-system.css`, imported last by
-`app/site-styles.ts` for legacy and localized routes. It defines the slate/indigo
-palette, readable type scale, card surfaces, focus states, reduced motion and
-responsive layouts across the feed, Discover, articles/comments, search, library,
-account, profile/author, composer and editorial workspace.
+The original site design and Home animations are retained. `app/layout-fixes.css`
+fixes the mobile bottom-navigation containing block, tablet admin form overflow
+and hidden mobile admin drawer navigation. All 16 sidebar topics appear at the
+same level. Existing theme, typography, icon treatment and hover animations are
+preserved; the experimental redesign has been removed.
 
-The feed sidebar in `app/social-feed.tsx` separates primary navigation from topics.
-All 16 topics appear in a flat list, without nested subcategories or disclosure controls. Desktop navigation
-scrolls within the viewport; mobile uses a topic strip. Inline SVG navigation
-icons live in `app/icons.tsx`. The mobile app bar must not use `filter`, `transform`
-or `backdrop-filter`: those create a containing block that traps the fixed bottom
-navigation inside the header.
-
-For local responsive UI checks, start the site with a non-sensitive post snapshot:
+Run responsive checks with a local non-sensitive snapshot:
 
 ```bash
 REZAN_POSTS_FILE=tests/fixtures/multilingual-posts.json npm run dev
@@ -115,21 +108,10 @@ npm ci --prefix automation
 node automation/ui-review.mjs
 ```
 
-The review script uses installed Google Chrome via Playwright, intercepts API
-requests with local sample data, and checks 16 routes at 320, 390, 768, 1024 and
-1440 pixels. It verifies the flat topic list/selection and reports runtime errors or
-page-level horizontal overflow. Screenshots and reports are saved under the
-ignored `build/ui-review/` directory. This is presentation verification; it does
-not validate live authentication or publishing. Run `npm run test:i18n` for the
-production static export and multilingual route checks.
-
-Validation (2026-11-05): production webpack export, 20 multilingual export tests,
-three category tests and PHP multilingual backend checks passed. Responsive
-review also covers account registration, profile editing, notification/account
-menu dismissal, fixed mobile navigation and all editorial workspace sections.
-The existing `react-hooks/set-state-in-effect` lint errors in the feed and app bar
-also occur on the original main revision; this UI change does not add lint errors.
-
+The script uses Google Chrome via Playwright and local API fixtures. It checks
+16 routes at five viewport widths, topic selection, menus and admin sections.
+Screenshots/reports are ignored under `build/ui-review/`. Production export and
+SEO checks use `npm run test:i18n`.
 
 ## Hourly publishing and search discovery
 
@@ -147,7 +129,7 @@ checked after live deployment. These are technical SEO foundations, not a promis
 of indexing dates or search rankings.
 
 Validation for hourly/category/SEO changes (2026-11-05): all 16 categories selected
-real, distinct source evidence; 22 Python automation/deployment tests, 23 static
+real, distinct source evidence; 23 Python automation/deployment tests, 23 static
 SEO/export tests, five category/sitemap-limit tests and PHP backend checks passed.
 Responsive review covers 80 route/viewport combinations. The sidebar retains the
 original icon-tile style and exposes all topics in a flat list without subcategories.
