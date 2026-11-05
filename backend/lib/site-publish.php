@@ -2,7 +2,7 @@
 declare(strict_types=1);
 require_once __DIR__.'/languages.php';
 
-function multilingualSitemapDocuments(string $site,array $rows,int $maxUrls=45000,int $maxBytes=40000000):array
+function multilingualSitemapDocuments(string $site,array $rows,int $maxUrls=10000,int $maxBytes=8000000):array
 {
     $site=rtrim($site,'/');
     $escape=fn(string $value):string=>htmlspecialchars($value,ENT_XML1|ENT_QUOTES,'UTF-8');

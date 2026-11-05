@@ -45,8 +45,8 @@ reported as a successfully deployed batch until every category is verified.
 The backend refreshes the sitemap after changed posts. After the complete batch,
 the workflow exports the entire public database, builds article/category pages
 and the complete sitemap, deploys over verified FTPS, and checks **every new live
-article and its sitemap entry**. Sitemap documents split before 45,000 URLs or
-40 MB, with a root index at `/sitemap.xml` when required. Both PHP's immediate
+article and its sitemap entry**. Sitemap documents split before 10,000 URLs or
+8 MB (below InfinityFree’s per-file limit), with a root index at `/sitemap.xml` when required. Both PHP's immediate
 refresh and the static export support sitemap shards. Sitemap inclusion does not
 guarantee Google indexing or ranking.
 
