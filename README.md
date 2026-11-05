@@ -96,8 +96,9 @@ See [AUTOMATION.md](AUTOMATION.md) for CPU Qwen writing, SSD-1B illustrations, a
 
 The original site design and Home animations are retained. `app/layout-fixes.css`
 fixes the mobile bottom-navigation containing block, tablet admin form overflow
-and hidden mobile admin drawer navigation. All 16 sidebar topics appear at the
-same level. Existing theme, typography, icon treatment and hover animations are
+and hidden mobile admin drawer navigation. All sidebar topics appear at the same level; **See more** at the bottom
+expands the list, which scrolls independently. The compact sidebar label is
+**Tech Guides**. Existing theme, typography, icon treatment and hover animations are
 preserved; the experimental redesign has been removed.
 
 Run responsive checks with a local non-sensitive snapshot:
@@ -129,7 +130,9 @@ checked after live deployment. These are technical SEO foundations, not a promis
 of indexing dates or search rankings.
 
 Validation for hourly/category/SEO changes (2026-11-05): all 16 categories selected
-real, distinct source evidence; 23 Python automation/deployment tests, 23 static
+real, distinct source evidence; 24 Python automation/deployment tests, 23 static
 SEO/export tests, five category/sitemap-limit tests and PHP backend checks passed.
 Responsive review covers 80 route/viewport combinations. The sidebar retains the
 original icon-tile style and exposes all topics in a flat list without subcategories.
+
+All 15 language homes additionally passed 45 desktop/mobile viewport checks for the shared flat sidebar, compact labels, pinned expansion control and bottom navigation.

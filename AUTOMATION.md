@@ -55,7 +55,8 @@ guarantee Google indexing or ranking.
 Deployments share a lock with manual deploy/recovery workflows. A remote SHA-256
 manifest skips identical managed files on later uploads; hashed assets arrive
 before HTML and the root sitemap arrives last. The manifest is committed only
-after uploads succeed. Existing host configuration and user uploads are preserved;
+after uploads succeed. Transfers use at most two FTP sessions; no coordinator
+connection remains idle during upload. Existing host configuration and user uploads are preserved;
 old static files are retained rather than deleted. Rerun failed jobs within the
 seven-day artifact retention period to reuse successful phase artifacts.
 

@@ -3,7 +3,12 @@
  /* A filtered ancestor traps fixed bottom navigation inside the app bar. */
  .social-top.upgraded.user-appbar {backdrop-filter:none!important;transform:none!important;filter:none!important}
 }
-.social-left {max-height:calc(100dvh - 112px);overflow-y:auto;scrollbar-width:thin}
+.social-left {height:calc(100vh - 112px);height:calc(100dvh - 112px);max-height:calc(100vh - 112px);max-height:calc(100dvh - 112px);min-height:0;overflow:hidden}
+.social-left .sidebar-primary {display:flex;flex-direction:column;gap:3px;flex-shrink:0}
+.social-left .side-topic-list {min-height:0;flex:1;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.social-left .side-topic {flex-shrink:0}
+.social-left .side-topic span {min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.4}
+.social-left .sidebar-more {flex-shrink:0;justify-content:center;min-height:42px;margin-top:8px;border-top:1px solid #e1e6ef;border-radius:0;color:#5965f5;font-size:12px}
 /* Every sidebar topic has equal hierarchy, including former child categories. */
 .social-left .side-topic {padding-inline-start:10px}
 .cms .table-head {flex-wrap:wrap;gap:18px}
@@ -30,3 +35,5 @@
 .category-links a[aria-current] {color:#5965f5;background:#eef0ff}
 .category-page .language-intro h1 {margin-top:10px}
 .category-page .language-card footer {background:transparent;color:#748092;padding:12px 0 0;display:flex;flex-wrap:wrap;gap:10px}
+
+[dir=rtl] .social-left .side-topic,[dir=rtl] .social-left .side-nav-item {text-align:start}

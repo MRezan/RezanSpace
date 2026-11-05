@@ -35,18 +35,24 @@ for (const width of (process.env.UI_REVIEW_WIDTHS?.split(',').map(Number)||[1440
    const position=await page.locator('.user-appbar>nav').evaluate(el=>({bottom:el.getBoundingClientRect().bottom,viewport:innerHeight}));
    if(Math.abs(position.bottom-position.viewport)>1)throw Error('Mobile navigation is not at the bottom of the viewport');
   }
-  if(path==='/'){
+  if(/^\/(?:en|es|pt-BR|hi|id|ar|fr|de|ja|bn|vi|tr|ko|it|pl)?\/?$/.test(path)){
    if(await page.locator('.social-left details').count())throw Error('Sidebar must not contain nested subcategories');
-   if(await page.locator('.social-left .side-topic').count()!==16)throw Error('Sidebar must expose all 16 topics');
+   if(await page.locator('.social-left .side-topic').count()!==8)throw Error('Sidebar should start with eight flat topics');
    if(width>720){
-    await page.getByRole('button',{name:'Sports',exact:true}).click();
-    if(await page.getByRole('button',{name:'Sports',exact:true}).getAttribute('aria-pressed')!=='true')throw Error('Topic selection failed');
+    await page.locator('.sidebar-more').click();
+    if(await page.locator('.social-left .side-topic').count()!==16)throw Error('See more must expose all 16 flat topics');
+    if(path==='/'||path==='/en/')if(!await page.getByRole('button',{name:'Tech Guides',exact:true}).isVisible())throw Error('Compact topic label is missing');
+    const sidebar=await page.locator('.social-left').evaluate(el=>{const list=el.querySelector('.side-topic-list');const more=el.querySelector('.sidebar-more');const rows=[...el.querySelectorAll('.side-topic')].map(row=>row.getBoundingClientRect().left);return {scrollable:list.scrollHeight>list.clientHeight,flat:rows.every(x=>Math.abs(x-rows[0])<1),bottom:more.getBoundingClientRect().bottom<=el.getBoundingClientRect().bottom+1};});
+    if(!sidebar.scrollable||!sidebar.flat||!sidebar.bottom)throw Error('Sidebar must scroll as one flat list with See more at its bottom');
+    await page.locator('.social-left .side-topic').last().click();
+    if(await page.locator('.social-left .side-topic').last().getAttribute('aria-pressed')!=='true')throw Error('Topic selection failed');
     await page.locator('.feed-tabs button').first().click();
+    await page.locator('.sidebar-more').click();
    }
-   await page.getByRole('button',{name:'Account',exact:true}).click();
+   await page.locator('.user-appbar .account-trigger').click();
    await page.keyboard.press('Escape');
    if(await page.locator('.account-menu').count())throw Error('Escape did not close account menu');
-   await page.getByRole('button',{name:'Notifications',exact:true}).click();
+   await page.locator('.user-appbar .notice').click();
    await page.keyboard.press('Escape');
    if(await page.locator('.notifications-menu').count())throw Error('Escape did not close notifications');
   }

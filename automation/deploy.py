@@ -6,6 +6,9 @@ import json
 import os
 from pathlib import Path,PurePosixPath
 import ssl
+from contextlib import contextmanager
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event
 
 ROOT=Path(__file__).resolve().parents[1]
 def config():
@@ -44,37 +47,65 @@ def previous_hashes(ftp):
   return value if isinstance(value,dict) and all(isinstance(k,str) and isinstance(v,str) for k,v in value.items()) else {}
  except (ftplib.error_perm,ValueError,UnicodeDecodeError):return {}
 
-def deploy(backend_only=False):
- values=config()
+@contextmanager
+def ftp_session(values):
  with ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=45) as ftp:
   ftp.connect(values['REZAN_FTP_HOST'],21);ftp.login(values['REZAN_FTP_USER'],values['REZAN_FTP_PASSWORD']);ftp.prot_p();ftp.cwd(values['REZAN_FTP_DIRECTORY'])
-  directories={''}
-  files=list(managed_files(backend_only))
-  # New chunk assets arrive before HTML that references them; sitemap is uploaded last.
-  files.sort(key=lambda item:(2 if item[1]=='sitemap.xml' else 0 if item[1].startswith('_next/') else 1,item[1]))
-  previous=previous_hashes(ftp);updated=dict(previous);changed=0
-  print('Checking '+str(len(files))+' managed files; unchanged content will be preserved.',flush=True)
-  for source,destination in files:
-   if source.is_symlink() or destination=='config.php' or destination.startswith('uploads/'):raise RuntimeError('Refusing to overwrite host configuration or user media')
-   digest=file_digest(source);updated[destination]=digest
-   if previous.get(destination)==digest:continue
-   parent=PurePosixPath(destination).parent
-   for index in range(1,len(parent.parts)+1):
-    directory=PurePosixPath(*parent.parts[:index]).as_posix()
-    if directory in directories:continue
-    try:ftp.mkd(directory)
-    except ftplib.error_perm as error:
-     if not str(error).startswith('550'):raise
-     current=ftp.pwd();ftp.cwd(directory);ftp.cwd(current)
-    directories.add(directory)
-   temporary=destination+'.uploading'
-   with source.open('rb') as stream:ftp.storbinary('STOR '+temporary,stream,blocksize=131072)
-   ftp.rename(temporary,destination);changed+=1
-   if changed%25==0:print('Uploaded '+str(changed)+' changed files.',flush=True)
+  yield ftp
+
+def upload_file(ftp,source,destination,directories):
+ parent=PurePosixPath(destination).parent
+ for index in range(1,len(parent.parts)+1):
+  directory=PurePosixPath(*parent.parts[:index]).as_posix()
+  if directory in directories:continue
+  try:ftp.mkd(directory)
+  except ftplib.error_perm as error:
+   if not str(error).startswith('550'):raise
+   current=ftp.pwd();ftp.cwd(directory);ftp.cwd(current)
+  directories.add(directory)
+ temporary=destination+'.uploading'
+ with source.open('rb') as stream:ftp.storbinary('STOR '+temporary,stream,blocksize=131072)
+ ftp.rename(temporary,destination)
+
+def deploy(backend_only=False):
+ values=config();files=list(managed_files(backend_only));hashes={}
+ for source,destination in files:
+  if source.is_symlink() or destination=='config.php' or destination.startswith('uploads/'):raise RuntimeError('Refusing to overwrite host configuration or user media')
+  hashes[destination]=file_digest(source)
+ with ftp_session(values) as ftp:previous=previous_hashes(ftp)
+ updated={**previous,**hashes};changed=[item for item in files if previous.get(item[1])!=hashes[item[1]]]
+ print(f'Uploading {len(changed)} changed files; skipping {len(files)-len(changed)} identical files.',flush=True)
+ stopped=Event()
+ def partition(items):
+  count=0
+  try:
+   with ftp_session(values) as ftp:
+    directories={''}
+    for source,destination in items:
+     if stopped.is_set():return count
+     upload_file(ftp,source,destination,directories);count+=1
+     if count%25==0:print('Transfer worker uploaded '+str(count)+' files.',flush=True)
+  except Exception:stopped.set();raise
+  return count
+ # At most two authenticated FTP sessions, with no idle coordinator connection.
+ # Finish every asset before publishing HTML; the root sitemap commits last.
+ workers=2
+ for assets in [True,False]:
+  phase=sorted([item for item in changed if item[1]!='sitemap.xml' and item[1].startswith('_next/')==assets],key=lambda item:item[1])
+  partitions=[phase[index::workers] for index in range(workers) if phase[index::workers]]
+  if partitions:
+   try:
+    with ThreadPoolExecutor(max_workers=workers) as pool:list(pool.map(partition,partitions))
+   except ftplib.error_temp:
+    if workers==1:raise
+    print('Hosting declined concurrent transfers; retrying with one session.',flush=True)
+    workers=1;stopped.clear();partition(phase)
+ with ftp_session(values) as ftp:
+  for source,destination in changed:
+   if destination=='sitemap.xml':upload_file(ftp,source,destination,{''})
   import io
   ftp.storbinary('STOR '+MANIFEST+'.uploading',io.BytesIO(json.dumps(updated,sort_keys=True).encode()),blocksize=131072)
   ftp.rename(MANIFEST+'.uploading',MANIFEST)
-  print('Uploaded '+str(changed)+' changed files; skipped '+str(len(files)-changed)+' identical files.',flush=True)
  print('Managed files uploaded over verified FTPS; existing config and uploaded images preserved.')
 
 if __name__=='__main__':

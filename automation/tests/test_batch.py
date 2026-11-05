@@ -16,6 +16,8 @@ class BatchTests(unittest.TestCase):
  def test_catalog_covers_each_frontend_category_and_approved_sources(self):
   frontend=(ROOT.parent/'app/categories.ts').read_text()
   sources=json.loads((ROOT/'sources.json').read_text())
+  frontend_categories=re.search(r'categories=\[([^\]]+)\] as const',frontend).group(1)
+  self.assertEqual({topic['name'] for topic in batch.TOPICS},set(re.findall(r"'([^']+)'",frontend_categories)))
   self.assertEqual(len(batch.TOPICS),16)
   for topic in batch.TOPICS:
    self.assertIn("'"+topic['name']+"'",frontend)
@@ -96,5 +98,40 @@ class DeploymentTests(unittest.TestCase):
    config={'REZAN_FTP_HOST':'example.invalid','REZAN_FTP_USER':'test','REZAN_FTP_PASSWORD':'test','REZAN_FTP_DIRECTORY':'rezan.space/htdocs'}
    with patch.object(deploy,'config',return_value=config),patch.object(deploy,'managed_files',return_value=iter([(source,'en/index.html')])),patch.object(deploy.ftplib,'FTP_TLS',return_value=ftp),self.assertRaises(OSError):deploy.deploy()
    self.assertFalse(any(deploy.MANIFEST in call.args[0] for call in ftp.storbinary.call_args_list))
+
+ def test_transfer_sessions_are_bounded_and_assets_finish_before_html(self):
+  import deploy
+  import threading
+  import time
+  lock=threading.Lock();active=0;peak=0;commands=[]
+  class FTP:
+   def __init__(self,**kwargs):pass
+   def __enter__(self):
+    nonlocal active,peak
+    with lock:active+=1;peak=max(peak,active)
+    return self
+   def __exit__(self,*args):
+    nonlocal active
+    with lock:active-=1
+   def connect(self,*args):pass
+   def login(self,*args):pass
+   def prot_p(self):pass
+   def cwd(self,*args):pass
+   def mkd(self,*args):pass
+   def rename(self,*args):pass
+   def retrbinary(self,command,append):append(b'{}')
+   def storbinary(self,command,stream,**kwargs):
+    with lock:commands.append(command)
+    time.sleep(.01)
+  with tempfile.TemporaryDirectory() as directory:
+   root=Path(directory);files=[]
+   for name in ['_next/a.js','_next/b.js','en/index.html','bn/index.html','sitemap.xml']:
+    source=root/name;source.parent.mkdir(parents=True,exist_ok=True);source.write_text(name);files.append((source,name))
+   config={'REZAN_FTP_HOST':'example.invalid','REZAN_FTP_USER':'test','REZAN_FTP_PASSWORD':'test','REZAN_FTP_DIRECTORY':'rezan.space/htdocs'}
+   with patch.object(deploy,'config',return_value=config),patch.object(deploy,'managed_files',return_value=iter(files)),patch.object(deploy.ftplib,'FTP_TLS',FTP):deploy.deploy()
+   self.assertEqual(peak,2);self.assertEqual(active,0)
+   self.assertTrue(all('_next/' in command for command in commands[:2]))
+   self.assertEqual(commands[-2],'STOR sitemap.xml.uploading')
+   self.assertEqual(commands[-1],'STOR '+deploy.MANIFEST+'.uploading')
 
 if __name__=='__main__':unittest.main()
