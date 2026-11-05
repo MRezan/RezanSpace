@@ -101,8 +101,7 @@ responsive layouts across the feed, Discover, articles/comments, search, library
 account, profile/author, composer and editorial workspace.
 
 The feed sidebar in `app/social-feed.tsx` separates primary navigation from topics.
-Six parent topics appear initially; **See more** exposes the remaining topics,
-and subcategories use keyboard-accessible disclosure controls. Desktop navigation
+All 16 topics appear in a flat list, without nested subcategories or disclosure controls. Desktop navigation
 scrolls within the viewport; mobile uses a topic strip. Inline SVG navigation
 icons live in `app/icons.tsx`. The mobile app bar must not use `filter`, `transform`
 or `backdrop-filter`: those create a containing block that traps the fixed bottom
@@ -117,8 +116,8 @@ node automation/ui-review.mjs
 ```
 
 The review script uses installed Google Chrome via Playwright, intercepts API
-requests with local sample data, and checks 13 routes at 320, 390, 768, 1024 and
-1440 pixels. It verifies topic expansion/selection and reports runtime errors or
+requests with local sample data, and checks 16 routes at 320, 390, 768, 1024 and
+1440 pixels. It verifies the flat topic list/selection and reports runtime errors or
 page-level horizontal overflow. Screenshots and reports are saved under the
 ignored `build/ui-review/` directory. This is presentation verification; it does
 not validate live authentication or publishing. Run `npm run test:i18n` for the
@@ -130,3 +129,25 @@ review also covers account registration, profile editing, notification/account
 menu dismissal, fixed mobile navigation and all editorial workspace sections.
 The existing `react-hooks/set-state-in-effect` lint errors in the feed and app bar
 also occur on the original main revision; this UI change does not add lint errors.
+
+
+## Hourly publishing and search discovery
+
+The hourly workflow covers all 16 categories and all 15 languages, with 20 parallel
+generation slots and complete-batch validation. See `AUTOMATION.md` for queue,
+source availability, artifact recovery and deployment behavior. Repository variable
+`AUTO_PUBLISH_ENABLED=true` activates schedules; previews never publish.
+
+Localized category archives link to real authored articles and expose canonical,
+Open Graph, language-alternate, CollectionPage and breadcrumb metadata. Empty
+archives are noindex and omitted from the sitemap. Account/admin/workspace routes
+are noindex. Published articles link to their category and related stories.
+The sitemap refreshes after publication, splits large URL sets safely, and is
+checked after live deployment. These are technical SEO foundations, not a promise
+of indexing dates or search rankings.
+
+Validation for hourly/category/SEO changes (2026-11-05): all 16 categories selected
+real, distinct source evidence; 22 Python automation/deployment tests, 23 static
+SEO/export tests, five category/sitemap-limit tests and PHP backend checks passed.
+Responsive review covers 80 route/viewport combinations. The sidebar retains the
+original icon-tile style and exposes all topics in a flat list without subcategories.

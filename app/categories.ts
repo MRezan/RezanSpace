@@ -8,3 +8,5 @@ export const categories=['Technology','Tech How-to & Troubleshooting','Business'
 export function categoryMatches(selected:string,actual:string){return selected===actual||categoryParents[actual]===selected;}
 export function categoryOptionLabel(category:string,locale:Locale='en'){const parent=categoryParents[category];return parent?`${topicLabel(locale,parent)} › ${topicLabel(locale,category)}`:topicLabel(locale,category);}
 export const suggestedInterests=[...categories,'Books','Design','Personal Growth'] as const;
+export function categorySlug(category:string){return category.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');}
+export function categoryPath(locale:Locale,category:string){return `/${locale}/category/${categorySlug(category)}/`;}

@@ -1,0 +1,275 @@
+name: Hourly all-category publishing
+run-name: ${{ inputs.dry_run && 'Preview — 16 categories × 15 languages' || 'Live — 16 categories × 15 languages' }}
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Preview all categories and languages without publishing'
+        type: boolean
+        default: true
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: rezan-hourly-category-batch
+  cancel-in-progress: false
+  queue: max
+
+env:
+  BLOG_WORK_DIR: work/blog
+  REZAN_SITE_URL: https://rezan.space
+  NODE_EXTRA_CA_CERTS: ${{ github.workspace }}/automation/certs/google-wr1.pem
+  HF_HOME: ${{ github.workspace }}/.cache/huggingface
+  HF_HUB_DISABLE_XET: '1'
+  OMP_NUM_THREADS: '4'
+  MKL_NUM_THREADS: '4'
+  CPU_IMAGE_WIDTH: '1024'
+  CPU_IMAGE_HEIGHT: '576'
+  CPU_IMAGE_STEPS: '16'
+jobs:
+  prepare:
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.AUTO_PUBLISH_ENABLED == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    outputs:
+      topics: ${{ steps.plan.outputs.topics }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: pip install -r automation/requirements.txt
+      - run: python -m unittest discover -s automation/tests -v
+      - name: Verify FTPS before spending generation time
+        if: ${{ github.event_name == 'schedule' || !inputs.dry_run }}
+        env:
+          REZAN_FTP_HOST: ${{ secrets.REZAN_FTP_HOST }}
+          REZAN_FTP_USER: ${{ secrets.REZAN_FTP_USER }}
+          REZAN_FTP_PASSWORD: ${{ secrets.REZAN_FTP_PASSWORD }}
+          REZAN_FTP_DIRECTORY: rezan.space/htdocs
+        run: python automation/deploy.py --check
+      - name: Export the live database and verify publishing readiness
+        if: ${{ github.event_name == 'schedule' || !inputs.dry_run }}
+        env:
+          REZAN_AUTOMATION_KEY: ${{ secrets.REZAN_AUTOMATION_KEY }}
+        run: |
+          npm ci --prefix automation
+          npx --prefix automation playwright install --with-deps chromium
+          node automation/delivery.mjs preflight
+      - name: Initialize a preview snapshot
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: mkdir -p work/blog && printf '[]' > work/blog/snapshot.json
+      - name: Restore this batch's source plan when retrying
+        if: github.run_attempt > 1
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with: {name: batch-plan, path: work/blog}
+      - name: Require distinct, unpublished evidence for every category
+        id: plan
+        run: python -u automation/batch.py plan
+      - uses: actions/upload-artifact@v4
+        with:
+          name: batch-plan
+          path: work/blog
+          overwrite: true
+          retention-days: 7
+  originals:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 100
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        topic: ${{ fromJSON(needs.prepare.outputs.topics) }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with: {name: batch-plan, path: work/blog}
+      - name: Restore completed original on retry
+        if: github.run_attempt > 1
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: category-original-${{ matrix.topic }}
+          path: work/blog
+      - uses: actions/cache@v4
+        with:
+          path: .cache/huggingface/hub/models--unsloth--Qwen3-4B-Instruct-2507-GGUF
+          key: qwen-a06e946bb6b655725eafa393f4a9745d460374c9-cpu-v1
+      - name: Generate and evidence-review the English original
+        env: {TOPIC: '${{ matrix.topic }}'}
+        run: |
+          pip install -r automation/requirements.txt -r automation/requirements-text.txt
+          python -u automation/blog.py english --work "work/blog/topics/$TOPIC"
+          mkdir -p "artifact/topics/$TOPIC"
+          cp "work/blog/topics/$TOPIC/manifest.json" "work/blog/topics/$TOPIC/en.json" "artifact/topics/$TOPIC/"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: category-original-${{ matrix.topic }}
+          path: artifact
+          overwrite: true
+          retention-days: 7
+  illustrations:
+    needs: [prepare, originals]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        topic: ${{ fromJSON(needs.prepare.outputs.topics) }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: category-original-${{ matrix.topic }}
+          path: work/blog
+      - name: Restore completed illustration on retry
+        if: github.run_attempt > 1
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: category-cover-${{ matrix.topic }}
+          path: work/blog
+      - name: Generate the category illustration on a separate runner
+        env: {TOPIC: '${{ matrix.topic }}'}
+        run: |
+          if [ ! -f "work/blog/topics/$TOPIC/cover.webp" ]; then
+            pip install -r automation/requirements.txt
+            pip install --no-cache-dir 'torch==2.7.1' --index-url https://download.pytorch.org/whl/cpu
+            pip install --no-cache-dir -r automation/requirements-image.txt
+            python -u automation/blog.py image --work "work/blog/topics/$TOPIC"
+          fi
+          mkdir -p "artifact/topics/$TOPIC"
+          cp "work/blog/topics/$TOPIC/cover.webp" "artifact/topics/$TOPIC/"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: category-cover-${{ matrix.topic }}
+          path: artifact
+          overwrite: true
+          retention-days: 7
+  translations:
+    # Sequential phases keep the entire workflow at no more than 20 generation jobs.
+    needs: [prepare, originals, illustrations]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 100
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        topic: ${{ fromJSON(needs.prepare.outputs.topics) }}
+        language: [en, es, pt-BR, hi, id, ar, fr, de, ja, bn, vi, tr, ko, it, pl]
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: category-original-${{ matrix.topic }}
+          path: work/blog
+      - name: Restore completed language on retry
+        if: github.run_attempt > 1
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: category-language-${{ matrix.topic }}-${{ matrix.language }}
+          path: work/blog
+      - uses: actions/cache/restore@v4
+        with:
+          path: .cache/huggingface/hub/models--unsloth--Qwen3-4B-Instruct-2507-GGUF
+          key: qwen-a06e946bb6b655725eafa393f4a9745d460374c9-cpu-v1
+      - name: Translate faithfully and validate the requested language
+        env:
+          TOPIC: ${{ matrix.topic }}
+          LANGUAGE: ${{ matrix.language }}
+        run: |
+          pip install -r automation/requirements.txt
+          if [ ! -f "work/blog/topics/$TOPIC/$LANGUAGE.json" ]; then
+            pip install -r automation/requirements-text.txt
+            python -u automation/blog.py translate --language "$LANGUAGE" --work "work/blog/topics/$TOPIC"
+          fi
+          mkdir -p "artifact/topics/$TOPIC"
+          cp "work/blog/topics/$TOPIC/$LANGUAGE.json" "artifact/topics/$TOPIC/"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: category-language-${{ matrix.topic }}-${{ matrix.language }}
+          path: artifact
+          overwrite: true
+          retention-days: 7
+  publish:
+    needs: [prepare, originals, illustrations, translations]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    concurrency:
+      group: rezan-live-deploy
+      cancel-in-progress: false
+      queue: max
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/download-artifact@v4
+        with: {name: batch-plan, path: work/blog}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: category-*
+          merge-multiple: true
+          path: work/blog
+      - name: Require complete coverage before publishing any category
+        run: |
+          pip install -r automation/requirements.txt
+          python automation/batch.py assemble
+      - name: Save a validated preview
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-category-preview
+          path: work/blog
+          retention-days: 7
+      - name: Publish every category and export all public posts
+        if: ${{ github.event_name == 'schedule' || !inputs.dry_run }}
+        env: {REZAN_AUTOMATION_KEY: '${{ secrets.REZAN_AUTOMATION_KEY }}'}
+        run: |
+          npm ci --prefix automation
+          npx --prefix automation playwright install --with-deps chromium
+          node automation/delivery.mjs publish-batch
+      - name: Build all article pages and refresh the complete sitemap
+        if: ${{ github.event_name == 'schedule' || !inputs.dry_run }}
+        env:
+          REZAN_POSTS_FILE: work/blog/snapshot.json
+          NEXT_PUBLIC_SITE_URL: https://rezan.space
+          NEXT_PUBLIC_API_URL: https://rezan.space
+        run: |
+          npm ci
+          npm run build -- --webpack
+      - name: Deploy managed files to InfinityFree
+        if: ${{ github.event_name == 'schedule' || !inputs.dry_run }}
+        env:
+          REZAN_FTP_HOST: ${{ secrets.REZAN_FTP_HOST }}
+          REZAN_FTP_USER: ${{ secrets.REZAN_FTP_USER }}
+          REZAN_FTP_PASSWORD: ${{ secrets.REZAN_FTP_PASSWORD }}
+          REZAN_FTP_DIRECTORY: rezan.space/htdocs
+        run: python automation/deploy.py
+      - name: Verify every new article and its sitemap entry
+        if: ${{ github.event_name == 'schedule' || !inputs.dry_run }}
+        run: node automation/delivery.mjs verify
+      - name: Summarize full coverage
+        run: |
+          echo '### All-category publishing' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Validated 16 categories × 15 languages (240 articles); generation concurrency is capped at 20.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Live mode verifies deployed article pages and every new sitemap URL. Preview mode never publishes.' >> "$GITHUB_STEP_SUMMARY"

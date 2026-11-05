@@ -1,7 +1,190 @@
 [
- {"feed":"https://www.nasa.gov/feed/","category":"Science","hosts":["www.nasa.gov","science.nasa.gov"]},
- {"feed":"https://hacks.mozilla.org/feed/","category":"Technology","hosts":["hacks.mozilla.org"]},
- {"feed":"https://web.dev/feed.xml","category":"Technology","hosts":["web.dev"]},
- {"feed":"https://blog.python.org/feeds/posts/default?alt=rss","category":"Technology","hosts":["blog.python.org"]},
- {"feed":"https://blog.rust-lang.org/feed.xml","category":"Technology","hosts":["blog.rust-lang.org"]}
+  {
+    "feed": "https://www.nasa.gov/feed/",
+    "category": "Science",
+    "hosts": [
+      "www.nasa.gov",
+      "science.nasa.gov"
+    ]
+  },
+  {
+    "feed": "https://hacks.mozilla.org/feed/",
+    "category": "Technology",
+    "hosts": [
+      "hacks.mozilla.org"
+    ]
+  },
+  {
+    "feed": "https://web.dev/feed.xml",
+    "category": "Technology",
+    "hosts": [
+      "web.dev"
+    ]
+  },
+  {
+    "feed": "https://blog.python.org/feeds/posts/default?alt=rss",
+    "category": "Technology",
+    "hosts": [
+      "blog.python.org"
+    ]
+  },
+  {
+    "feed": "https://blog.rust-lang.org/feed.xml",
+    "category": "Technology",
+    "hosts": [
+      "blog.rust-lang.org"
+    ]
+  },
+  {
+    "feed": "https://web.dev/feed.xml",
+    "category": "Tech How-to & Troubleshooting",
+    "hosts": [
+      "web.dev"
+    ]
+  },
+  {
+    "feed": "https://news.mit.edu/rss/topic/business",
+    "category": "Business",
+    "hosts": [
+      "news.mit.edu"
+    ]
+  },
+  {
+    "feed": "https://news.mit.edu/rss/topic/health-sciences-and-technology",
+    "category": "Health",
+    "hosts": [
+      "news.mit.edu"
+    ]
+  },
+  {
+    "feed": "https://www.smithsonianmag.com/rss/arts-culture/",
+    "category": "Culture",
+    "hosts": [
+      "www.smithsonianmag.com"
+    ]
+  },
+  {
+    "feed": "https://news.mit.edu/rss/topic/arts",
+    "category": "Culture",
+    "hosts": [
+      "news.mit.edu"
+    ]
+  },
+  {
+    "feed": "https://thewaltdisneycompany.com/",
+    "category": "Entertainment",
+    "hosts": [
+      "thewaltdisneycompany.com"
+    ],
+    "format": "html",
+    "prefixes": [
+      "https://thewaltdisneycompany.com/news/",
+      "https://thewaltdisneycompany.com/press-releases/"
+    ]
+  },
+  {
+    "feed": "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml",
+    "category": "Entertainment",
+    "hosts": [
+      "feeds.bbci.co.uk",
+      "www.bbc.co.uk",
+      "www.bbc.com"
+    ]
+  },
+  {
+    "feed": "https://news.mit.edu/rss/topic/education",
+    "category": "Education",
+    "hosts": [
+      "news.mit.edu"
+    ]
+  },
+  {
+    "feed": "https://zenhabits.net/index.xml",
+    "category": "Lifestyle",
+    "hosts": [
+      "zenhabits.net"
+    ]
+  },
+  {
+    "feed": "https://www.federalreserve.gov/feeds/press_all.xml",
+    "category": "Finance",
+    "hosts": [
+      "www.federalreserve.gov"
+    ]
+  },
+  {
+    "feed": "https://www.ecb.europa.eu/rss/press.html",
+    "category": "Finance",
+    "hosts": [
+      "www.ecb.europa.eu"
+    ]
+  },
+  {
+    "feed": "https://www.smithsonianmag.com/rss/travel/",
+    "category": "Travel",
+    "hosts": [
+      "www.smithsonianmag.com"
+    ]
+  },
+  {
+    "feed": "https://blog.ricksteves.com/feed/",
+    "category": "Travel Planning",
+    "hosts": [
+      "blog.ricksteves.com"
+    ],
+    "keywords": [
+      "plan",
+      "tip",
+      "train",
+      "hotel",
+      "guide",
+      "pack",
+      "ticket",
+      "route",
+      "itiner",
+      "museum",
+      "travel",
+      "tour",
+      "europe",
+      "vacation"
+    ]
+  },
+  {
+    "feed": "https://www.nasa.gov/earth/feed/",
+    "category": "Environment",
+    "hosts": [
+      "www.nasa.gov",
+      "science.nasa.gov"
+    ]
+  },
+  {
+    "feed": "https://news.mit.edu/rss/topic/climate-change-and-sustainability",
+    "category": "Environment",
+    "hosts": [
+      "news.mit.edu"
+    ]
+  },
+  {
+    "feed": "https://www.budgetbytes.com/feed/",
+    "category": "Food & Recipes",
+    "hosts": [
+      "www.budgetbytes.com"
+    ]
+  },
+  {
+    "feed": "https://makezine.com/feed/",
+    "category": "DIY, Crafts & Hobbies",
+    "hosts": [
+      "makezine.com"
+    ]
+  },
+  {
+    "feed": "https://feeds.bbci.co.uk/sport/rss.xml",
+    "category": "Sports",
+    "hosts": [
+      "feeds.bbci.co.uk",
+      "www.bbc.co.uk",
+      "www.bbc.com"
+    ]
+  }
 ]

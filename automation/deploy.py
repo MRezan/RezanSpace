@@ -1,6 +1,8 @@
 """Upload only managed static/backend files using verified explicit FTPS."""
 import argparse
 import ftplib
+import hashlib
+import json
 import os
 from pathlib import Path,PurePosixPath
 import ssl
@@ -23,6 +25,25 @@ def managed_files(backend_only=False):
  yield ROOT/'backend/bootstrap.php','bootstrap.php'
  yield ROOT/'backend/.htaccess','.htaccess'
 
+MANIFEST='.rezan-deploy-manifest.json'
+
+def file_digest(path):
+ digest=hashlib.sha256()
+ with path.open('rb') as stream:
+  for chunk in iter(lambda:stream.read(131072),b''):digest.update(chunk)
+ return digest.hexdigest()
+
+def previous_hashes(ftp):
+ content=bytearray()
+ def append(chunk):
+  if len(content)+len(chunk)>10_000_000:raise ValueError('Deployment manifest is too large')
+  content.extend(chunk)
+ try:
+  ftp.retrbinary('RETR '+MANIFEST,append)
+  value=json.loads(content)
+  return value if isinstance(value,dict) and all(isinstance(k,str) and isinstance(v,str) for k,v in value.items()) else {}
+ except (ftplib.error_perm,ValueError,UnicodeDecodeError):return {}
+
 def deploy(backend_only=False):
  values=config()
  with ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=45) as ftp:
@@ -31,8 +52,12 @@ def deploy(backend_only=False):
   files=list(managed_files(backend_only))
   # New chunk assets arrive before HTML that references them; sitemap is uploaded last.
   files.sort(key=lambda item:(2 if item[1]=='sitemap.xml' else 0 if item[1].startswith('_next/') else 1,item[1]))
+  previous=previous_hashes(ftp);updated=dict(previous);changed=0
+  print('Checking '+str(len(files))+' managed files; unchanged content will be preserved.',flush=True)
   for source,destination in files:
    if source.is_symlink() or destination=='config.php' or destination.startswith('uploads/'):raise RuntimeError('Refusing to overwrite host configuration or user media')
+   digest=file_digest(source);updated[destination]=digest
+   if previous.get(destination)==digest:continue
    parent=PurePosixPath(destination).parent
    for index in range(1,len(parent.parts)+1):
     directory=PurePosixPath(*parent.parts[:index]).as_posix()
@@ -44,7 +69,12 @@ def deploy(backend_only=False):
     directories.add(directory)
    temporary=destination+'.uploading'
    with source.open('rb') as stream:ftp.storbinary('STOR '+temporary,stream,blocksize=131072)
-   ftp.rename(temporary,destination)
+   ftp.rename(temporary,destination);changed+=1
+   if changed%25==0:print('Uploaded '+str(changed)+' changed files.',flush=True)
+  import io
+  ftp.storbinary('STOR '+MANIFEST+'.uploading',io.BytesIO(json.dumps(updated,sort_keys=True).encode()),blocksize=131072)
+  ftp.rename(MANIFEST+'.uploading',MANIFEST)
+  print('Uploaded '+str(changed)+' changed files; skipped '+str(len(files)-changed)+' identical files.',flush=True)
  print('Managed files uploaded over verified FTPS; existing config and uploaded images preserved.')
 
 if __name__=='__main__':

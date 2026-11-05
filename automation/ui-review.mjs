@@ -24,7 +24,7 @@ for (const width of (process.env.UI_REVIEW_WIDTHS?.split(',').map(Number)||[1440
   return route.fulfill({json:data});
  });
  const page=await context.newPage();const errors=[];page.on('pageerror',err=>errors.push(err.stack));
- for(const path of (process.env.UI_REVIEW_ROUTES?.split(',')||['/','/discover/','/library/','/account/','/search/?q=ideas','/author/?name=Maya','/profile/','/create/','/admin/','/bn/','/ar/','/en/post/solar-energy-en/','/bn/post/solar-energy-bn/'])) {
+ for(const path of (process.env.UI_REVIEW_ROUTES?.split(',')||['/','/discover/','/library/','/account/','/search/?q=ideas','/author/?name=Maya','/profile/','/create/','/admin/','/bn/','/ar/','/en/post/solar-energy-en/','/bn/post/solar-energy-bn/','/en/category/science/','/bn/category/science/','/ar/category/science/'])) {
   errors.length=0;const response=await page.goto('http://127.0.0.1:3000'+path);if(!response.ok())throw Error(`${path}: HTTP ${response.status()}`);await page.waitForTimeout(700);
   const layout=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,overflow:[...document.querySelectorAll('main *')].filter(el=>{const r=el.getBoundingClientRect();return r.width>0&&(r.right>innerWidth+2||r.left< -2)&&getComputedStyle(el).position!=='absolute'&&getComputedStyle(el).position!=='fixed'}).slice(0,5).map(el=>el.className)}));
   report.push({width,path,...layout,errors:[...errors]});
@@ -36,11 +36,11 @@ for (const width of (process.env.UI_REVIEW_WIDTHS?.split(',').map(Number)||[1440
    if(Math.abs(position.bottom-position.viewport)>1)throw Error('Mobile navigation is not at the bottom of the viewport');
   }
   if(path==='/'){
-   await page.getByRole('button',{name:'See more',exact:true}).click();
-   if(!await page.getByRole('button',{name:'Sports',exact:true}).isVisible())throw Error('Topics expansion failed');
+   if(await page.locator('.social-left details').count())throw Error('Sidebar must not contain nested subcategories');
+   if(await page.locator('.social-left .side-topic').count()!==16)throw Error('Sidebar must expose all 16 topics');
    await page.getByRole('button',{name:'Sports',exact:true}).click();
    if(await page.getByRole('button',{name:'Sports',exact:true}).getAttribute('aria-pressed')!=='true')throw Error('Topic selection failed');
-   await page.getByRole('button',{name:'See less',exact:true}).click();
+   await page.locator('.side-reset').click();
    await page.getByRole('button',{name:'Account',exact:true}).click();
    await page.keyboard.press('Escape');
    if(await page.locator('.account-menu').count())throw Error('Escape did not close account menu');

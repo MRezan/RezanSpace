@@ -53,24 +53,38 @@ def fetch_source(url,hosts):
   encoding=response.encoding or 'utf-8';response.close();return b''.join(chunks).decode(encoding,errors='replace')
  raise BlogError('Too many source redirects')
 
-def plan(snapshot,output):
+def plan(snapshot,output,category=None):
  from bs4 import BeautifulSoup
  existing={post.get('translation_key') for post in snapshot}
  recent_titles=[post['title'] for post in snapshot if post.get('language','en')=='en'][:100]
  feeds=json.loads((ROOT/'sources.json').read_text())
+ if category is not None:feeds=[feed for feed in feeds if feed['category']==category]
+ if not feeds:raise BlogError('No approved source feeds for category '+str(category))
  # Rotate the starting publisher, then select the newest unpublished entry. A canonical source URL
  # determines every slug, so retries and later runs cannot create another copy of that story.
  offset=int(os.getenv('GITHUB_RUN_NUMBER','0'))%len(feeds);feeds=feeds[offset:]+feeds[:offset]
  successful_feeds=0
  for feed in feeds:
   try:
-   root=ET.fromstring(fetch_source(feed['feed'],feed['hosts']));successful_feeds+=1
-   entries=root.findall('.//item') or root.findall('.//{http://www.w3.org/2005/Atom}entry')
-   for entry in entries[:25]:
-    link=entry.findtext('link')
-    if not link:
-     for child in entry.findall('{http://www.w3.org/2005/Atom}link'):
-      if child.attrib.get('rel','alternate')=='alternate':link=child.attrib.get('href');break
+   raw=fetch_source(feed['feed'],feed['hosts']);entries=[]
+   if feed.get('format')=='html':
+    from urllib.parse import urljoin
+    soup=BeautifulSoup(raw,'html.parser');seen=set()
+    for anchor in soup.select('a[href]'):
+     link=urljoin(feed['feed'],anchor['href'])
+     if link in seen or not any(link.startswith(prefix) for prefix in feed['prefixes']):continue
+     seen.add(link);entries.append((link,anchor.get_text(' ',strip=True)))
+   else:
+    root=ET.fromstring(raw)
+    for entry in root.findall('.//item') or root.findall('.//{http://www.w3.org/2005/Atom}entry'):
+     link=entry.findtext('link')
+     if not link:
+      for child in entry.findall('{http://www.w3.org/2005/Atom}link'):
+       if child.attrib.get('rel','alternate')=='alternate':link=child.attrib.get('href');break
+     entries.append((link,entry.findtext('title') or entry.findtext('{http://www.w3.org/2005/Atom}title') or ''))
+   successful_feeds+=1
+   for link,title in entries[:50]:
+    if feed.get('keywords') and not any(word in (title+' '+str(link)).lower() for word in feed['keywords']):continue
     if not link or not allowed_url(link,feed['hosts']):continue
     link=link.split('#')[0];key=source_key(link)
     # Incomplete previously published batches are repaired by the delivery stage's idempotent slugs.
@@ -82,7 +96,7 @@ def plan(snapshot,output):
     paragraphs=[p.get_text(' ',strip=True) for p in article.find_all(['p','h2','h3','li'])]
     text='\n'.join(paragraphs)
     if len(text)<1200:continue
-    title=entry.findtext('title') or entry.findtext('{http://www.w3.org/2005/Atom}title') or 'New research and technology'
+    title=title or (soup.h1.get_text(' ',strip=True) if soup.h1 else 'Source report')
     save(output,{'key':key,'category':feed['category'],'sources':[{'id':1,'url':link,'title':title,'text':text[:9000]}],'recent_titles':recent_titles,'model':'Qwen/Qwen3-4B-Instruct-2507'})
     return True
   except Exception as error:

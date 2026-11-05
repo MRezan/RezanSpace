@@ -7,11 +7,31 @@ const html=path=>readFile(new URL(`../out/${path}/index.html`,import.meta.url),'
 for(const locale of locales)test(`${locale}: static language, direction, canonical and reciprocal home alternates`,async()=>{const page=await html(locale);assert.match(page,new RegExp(`<html[^>]*lang="${locale}"`));assert.match(page,new RegExp(`dir="${locale==='ar'?'rtl':'ltr'}"`));assert.ok(page.includes(`rel="canonical" href="https://example.com/${locale}/"`));for(const alternate of locales)assert.ok(page.includes(`hrefLang="${alternate}" href="https://example.com/${alternate}/"`));});
 test('translated article HTML contains authored text and only real alternate articles',async()=>{const page=await html('bn/post/solar-energy-bn');assert.ok(page.includes('সৌর প্যানেল সূর্যের আলোকে বিদ্যুতে রূপান্তর করে।'));for(const locale of ['en','bn','ar'])assert.ok(page.includes(`hrefLang="${locale}" href="https://example.com/${locale}/post/solar-energy-${locale}/"`));assert.ok(!page.includes('hrefLang="fr" href="https://example.com/fr/post/'));assert.match(page,/"inLanguage":"bn"/);assert.ok(page.includes('BreadcrumbList'));assert.ok(!page.includes('Solar panels convert sunlight'));});
 test('unrelated story does not pretend to be a translation',async()=>{const page=await html('es/post/independent-story');assert.ok(page.includes('hrefLang="es" href="https://example.com/es/post/independent-story/"'));assert.ok(!page.includes('hrefLang="en" href="https://example.com/en/post/'));await assert.rejects(access(new URL('../out/fr/post/independent-story/index.html',import.meta.url)));});
-test('sitemap and robots use the same public origin and no fabricated articles',async()=>{const xml=await readFile(new URL('../out/sitemap.xml',import.meta.url),'utf8');assert.equal((xml.match(/<url>/g)||[]).length,26);assert.ok(xml.includes('https://example.com/bn/post/solar-energy-bn/'));assert.ok(!xml.includes('/fr/post/'));assert.ok(!xml.includes('localhost'));const robots=await readFile(new URL('../out/robots.txt',import.meta.url),'utf8');assert.ok(robots.includes('Sitemap: https://example.com/sitemap.xml'));});
+test('sitemap and robots use the same public origin and no fabricated articles',async()=>{const xml=await readFile(new URL('../out/sitemap.xml',import.meta.url),'utf8');assert.equal((xml.match(/<url>/g)||[]).length,29);assert.ok(xml.includes('https://example.com/bn/post/solar-energy-bn/'));assert.ok(!xml.includes('/fr/post/'));assert.ok(!xml.includes('localhost'));const robots=await readFile(new URL('../out/robots.txt',import.meta.url),'utf8');assert.ok(robots.includes('Sitemap: https://example.com/sitemap.xml'));});
 
 test("legacy same-site cover URLs upgrade to HTTPS and retain descriptive alt text",async()=>{const page=await html("en/post/solar-energy-en");assert.ok(page.includes('src="https://example.com/uploads/solar-cover.webp"'));assert.ok(page.includes('alt="An illustrative solar panel"'));assert.ok(!page.includes('src="http://example.com/uploads/solar-cover.webp"'));});
 
 test('every language reuses the social app shell and renders only its authored stories',async()=>{
  for(const locale of locales){const page=await html(locale);for(const marker of ['user-appbar','social-layout','social-left','social-center','social-right','composer','feed-tabs'])assert.ok(page.includes(marker),`${locale}: missing shared ${marker}`);assert.ok(!page.includes('class="language-header"'));}
  const bn=await html('bn');assert.ok(bn.includes('প্রচ্ছদ'));assert.ok(bn.includes('সৌর'));assert.ok(!bn.includes('Solar panels convert sunlight'));
+});
+
+test('category pages have real articles, matching canonical links and crawlable navigation',async()=>{
+ const page=await html('en/category/science');
+ assert.ok(page.includes('href="https://example.com/en/category/science/"'));
+ assert.ok(page.includes('Solar energy explained'));
+ assert.ok(page.includes('/en/post/solar-energy-en/'));
+ assert.ok(page.includes('CollectionPage'));
+ const article=await html('en/post/solar-energy-en');
+ assert.ok(article.includes('/en/category/science/'));
+ const home=await html('en');assert.equal((home.match(/<h1(?:\s|>)/g)||[]).length,1);
+});
+test('empty category archives are noindex and excluded from sitemap',async()=>{
+ const empty=await html('bn/category/finance');assert.ok(empty.includes('noindex'));
+ const xml=await readFile(new URL('../out/sitemap.xml',import.meta.url),'utf8');
+ assert.ok(xml.includes('/en/category/science/'));
+ assert.ok(!xml.includes('/bn/category/finance/'));
+});
+test('account and administrative pages do not advertise themselves for indexing',async()=>{
+ for(const route of ['account','profile','library','create','admin','search'])assert.ok((await html(route)).includes('noindex'),route);
 });

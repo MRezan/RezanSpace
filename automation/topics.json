@@ -1,0 +1,18 @@
+[
+ {"slug":"technology","name":"Technology"},
+ {"slug":"tech-how-to-troubleshooting","name":"Tech How-to & Troubleshooting"},
+ {"slug":"business","name":"Business"},
+ {"slug":"science","name":"Science"},
+ {"slug":"health","name":"Health"},
+ {"slug":"culture","name":"Culture"},
+ {"slug":"entertainment","name":"Entertainment"},
+ {"slug":"education","name":"Education"},
+ {"slug":"lifestyle","name":"Lifestyle"},
+ {"slug":"finance","name":"Finance"},
+ {"slug":"travel","name":"Travel"},
+ {"slug":"travel-planning","name":"Travel Planning"},
+ {"slug":"environment","name":"Environment"},
+ {"slug":"food-recipes","name":"Food & Recipes"},
+ {"slug":"diy-crafts-hobbies","name":"DIY, Crafts & Hobbies"},
+ {"slug":"sports","name":"Sports"}
+]
