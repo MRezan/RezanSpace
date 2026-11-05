@@ -29,7 +29,9 @@ cancel an active batch. Runs beyond GitHub's queue limits can be rejected.
 
 Every original and translation must pass schema, language and evidence review.
 Sources are treated as evidence rather than instructions, generated markup is
-escaped, and AI authorship/illustrations are disclosed. This model consistency
+escaped, and AI assistance/illustrations are disclosed. Each source topic receives a stable
+generated pen name shared by its translations; it is not a newly created user
+account or a claim about a real person’s credentials. This model consistency
 review is not independent human fact-checking. No unsupported article is invented
 to meet a quota. If any category has no eligible source, or any translation/image
 fails, the batch fails visibly before publication. Publisher availability and the

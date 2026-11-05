@@ -41,6 +41,14 @@ class BatchTests(unittest.TestCase):
    posts=[post for topic in batch.TOPICS for post in json.loads((work/'topics'/topic['slug']/'payload.json').read_text())['posts']]
    self.assertEqual(len({post['slug'] for post in posts}),240)
    for topic in batch.TOPICS:self.assertEqual({post['language'] for post in posts if post['category']==topic['name']},set(blog.LANGUAGES))
+ def test_publication_pen_names_are_stable_and_shared_by_translations(self):
+  first=blog.publication_author('ai-topic-one');second=blog.publication_author('ai-topic-two')
+  self.assertNotEqual(first,'REZAN AI Editorial');self.assertNotEqual(first,second)
+  self.assertRegex(first,r'^[A-Za-z]+ [A-Z]\. [A-Za-z]+$')
+  self.assertEqual(first,blog.publication_author('ai-topic-one'))
+  article={'title':'Example','excerpt':'Example excerpt','image_alt':'Example image','sections':[]}
+  manifest={'key':'ai-topic-one','category':'Science','sources':[]}
+  self.assertEqual(blog.payload(article,manifest,'en')['author'],blog.payload(article,manifest,'bn')['author'])
  def test_missing_translation_blocks_the_batch(self):
   with tempfile.TemporaryDirectory() as directory:
    work=Path(directory);self.prepare(work)

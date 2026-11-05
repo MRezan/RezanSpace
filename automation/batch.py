@@ -32,6 +32,7 @@ def make_plan(work):
    if not blog.plan(reserved,path,topic['name']):raise blog.BlogError('Distinct evidence unavailable for '+topic['name'])
    manifest=json.loads(path.read_text())
   if manifest['category']!=topic['name']:raise blog.BlogError('Evidence category mismatch')
+  manifest['author']=manifest.get('author') or blog.publication_author(manifest['key']);blog.save(path,manifest)
   reserved.append({'translation_key':manifest['key'],'title':manifest['sources'][0]['title'],'language':'en'})
  blog.save(target,TOPICS)
  return TOPICS

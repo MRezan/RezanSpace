@@ -197,8 +197,20 @@ def render_content(article,manifest,language):
  parts.append('<p><em>'+html.escape(disclosure.get(language,'REZAN AI Editorial · Qwen3 · AI illustration'))+'</em></p>')
  return ''.join(parts)
 
+def publication_author(key):
+ # Stable pen names keep all translations and retries attributed consistently.
+ groups=[
+  (['Ayaan','Nabila','Rafi','Sadia','Arif','Tania','Fahim','Nusrat','Samir','Farah','Imran','Mira','Rayan','Nadia','Zayan','Anika'],['Rahman','Hasan','Ahmed','Chowdhury','Khan','Islam','Alam','Hossain','Karim','Mahmud','Siddiqui','Haque','Bashar','Kabir','Amin','Halim']),
+  (['Oliver','Amelia','Ethan','Clara','Leo','Sophie','Adrian','Isabel','Theo','Lena','Julian','Alice','Daniel','Emma','Felix','Grace'],['Bennett','Morgan','Reed','Parker','Brooks','Hayes','Clarke','Foster','Ellis','Walker','Collins','Taylor','West','Blake','Palmer','Hart']),
+  (['Arjun','Priya','Rohan','Kavya','Dev','Ananya','Ishan','Meera','Vihaan','Diya','Nikhil','Tara','Aarav','Sana','Neel','Riya'],['Sen','Sharma','Kapoor','Mehta','Rao','Shah','Nair','Bose','Das','Patel','Roy','Joshi','Iyer','Gupta','Verma','Sethi']),
+  (['Mateo','Elena','Lucas','Sofia','Gabriel','Lucia','Rafael','Valeria','Diego','Camila','Marco','Alba','Bruno','Ines','Daniel','Clara'],['Costa','Silva','Rivera','Marin','Torres','Vega','Santos','Navarro','Lima','Alves','Reis','Ramos','Cruz','Mora','Castro','Vidal'])
+ ]
+ digest=hashlib.sha256(('rezan-pen-name-v1:'+key).encode()).digest()
+ first,last=groups[digest[0]%len(groups)]
+ return first[digest[1]%len(first)]+' '+chr(65+digest[3]%26)+'. '+last[digest[2]%len(last)]
+
 def payload(article,manifest,language):
- return {'title':article['title'],'slug':manifest['key']+'-'+language.lower(),'language':language,'translation_key':manifest['key'],'excerpt':article['excerpt'],'content':render_content(article,manifest,language),'author':'REZAN AI Editorial','category':manifest['category'],'status':'published','image_alt':article['image_alt']}
+ return {'title':article['title'],'slug':manifest['key']+'-'+language.lower(),'language':language,'translation_key':manifest['key'],'excerpt':article['excerpt'],'content':render_content(article,manifest,language),'author':manifest.get('author') or publication_author(manifest['key']),'category':manifest['category'],'status':'published','image_alt':article['image_alt']}
 
 def main():
  parser=argparse.ArgumentParser();parser.add_argument('stage',choices=['plan','english','translate','image','assemble']);parser.add_argument('--work',default='work/blog');parser.add_argument('--language',choices=LANGUAGES,default='en');args=parser.parse_args();work=Path(args.work)
