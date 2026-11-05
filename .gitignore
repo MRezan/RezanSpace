@@ -55,3 +55,6 @@ content/published-posts*.json
 /.cache/
 
 /.venv/
+
+# Local screenshots and responsive browser reports.
+/build/ui-review/

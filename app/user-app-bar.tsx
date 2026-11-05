@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import {Icon} from './icons';
 import {useUi} from './ui-language';
 import {localePath} from '../lib/i18n/locales';
 import {LanguageSwitcher} from './language-switcher';
@@ -130,18 +131,18 @@ export function UserAppBar() {
       <Link href={localePath(locale)} className="app-wordmark">{tr("REZAN")}</Link>
     </div>
     <form className="app-search" onSubmit={search}>
-      <span>⌕</span>
-      <input ref={searchInput} value={query} onChange={event => setQuery(event.target.value)} placeholder={tr('Search stories, people and topics')} />
+      <span><Icon name="search"/></span>
+      <input ref={searchInput} value={query} onChange={event => setQuery(event.target.value)} aria-label={tr('Search stories, people and topics')} placeholder={tr('Search stories, people and topics')} />
       <kbd>{tr("⌘ K")}</kbd>
     </form>
     <nav aria-label="Main navigation">
-      <Link className={(activePath === '/' || activePath === `/${locale}`) ? 'active' : ''} href={localePath(locale)}>⌂<small>{tr("Home")}</small></Link>
-      <Link className={activePath.startsWith('/discover') ? 'active' : ''} href="/discover">◈<small>{tr("Discover")}</small></Link>
-      <Link className={activePath.startsWith('/library') ? 'active' : ''} href={viewer ? '/library' : '/account'}>♧<small>{tr("Library")}</small></Link>
+      <Link aria-current={(activePath === '/' || activePath === `/${locale}`) ? 'page' : undefined} className={(activePath === '/' || activePath === `/${locale}`) ? 'active' : ''} href={localePath(locale)}><Icon name="home"/><small>{tr("Home")}</small></Link>
+      <Link aria-current={activePath.startsWith('/discover') ? 'page' : undefined} className={activePath.startsWith('/discover') ? 'active' : ''} href="/discover"><Icon name="compass"/><small>{tr("Discover")}</small></Link>
+      <Link aria-current={activePath.startsWith('/library') ? 'page' : undefined} className={activePath.startsWith('/library') ? 'active' : ''} href={viewer ? '/library' : '/account'}><Icon name="bookmark"/><small>{tr("Library")}</small></Link>
     </nav>
     <div className="app-actions" ref={appActions}><LanguageSwitcher/>
-      <button className="notice" aria-label={tr('Notifications')} onClick={toggleNotices}>
-        <span className="bell-shape">●</span>
+      <button className="notice" aria-label={tr('Notifications')} aria-expanded={noticesOpen} onClick={toggleNotices}>
+        <Icon name="bell"/>
         {unread > 0 && <i>{unread > 9 ? '9+' : unread}</i>}
       </button>
       {noticesOpen && <div className="notifications-menu">
@@ -150,7 +151,7 @@ export function UserAppBar() {
           <b className={`notification-type ${notice.type}`} aria-hidden="true"><i/></b><p>{notice.message}<small>{notice.type==='comment'?'New comment':'Notification'} · {new Date(notice.created_at).toLocaleString()}</small></p>
         </Link><button onClick={()=>setNoticeRead(notice.id,!Boolean(notice.read_at))}>{notice.read_at?tr('Mark unread'):tr('Mark read')}</button></div>) : <div className="empty-notices"><b>🔔</b><p>{tr("No notifications yet.")}</p><small>{tr("Comments and publishing updates will appear here.")}</small></div>}
       </div>}
-      <button className="account-trigger" onClick={() => { setMenu(!menu); setNoticesOpen(false); }}>
+      <button className="account-trigger" aria-label={tr("Account")} aria-expanded={menu} onClick={() => { setMenu(!menu); setNoticesOpen(false); }}>
         <span className="social-avatar">{viewer?.avatar_url?<img src={viewer.avatar_url} alt=""/>:initial}</span><b>{viewer?.name || tr('Account')}</b><em>⌄</em>
       </button>
       {menu && <div className="account-menu" onClick={() => setMenu(false)}>

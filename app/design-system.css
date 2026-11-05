@@ -1,0 +1,328 @@
+/* Shared presentation layer. Keep layout, colour and type decisions in one place. */
+:root {
+  --canvas:#f5f6f8; --surface:#fff; --text:#192333; --muted:#677386;
+  --border:#e5e9ef; --accent:#4d5cdb; --accent-soft:#eef0fc;
+  --shadow:0 4px 24px #182b4b05; --radius:18px;
+  --ink:var(--text); --paper:var(--canvas); --teal:var(--accent);
+  --social-blue:var(--accent); --social-bg:var(--canvas);
+}
+body {background:var(--canvas);color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,a,input,select,textarea {-webkit-tap-highlight-color:transparent}
+button {cursor:pointer}
+button:disabled {cursor:not-allowed;opacity:.5}
+a,button,input,select,textarea,summary {outline-offset:4px}
+:focus-visible {outline:3px solid #8e9aef!important}
+::selection {background:#dce1ff;color:#202b65}
+input,textarea,select {accent-color:var(--accent)}
+h1,h2,h3 {text-wrap:pretty}
+.social-app,.social-search,.discover-page,.library-page,.profile-page,.author-page,.create-post,.seo-story {background:var(--canvas);font-family:inherit}
+/* App bar: quiet chrome, consistent line icons, readable labels. */
+.social-top.upgraded.user-appbar {height:76px;grid-template-columns:155px minmax(180px,1fr) 240px max-content;gap:24px;padding-inline:max(28px,calc((100vw - 1400px)/2));background:#fffffff5;border-bottom:1px solid var(--border);box-shadow:none;backdrop-filter:blur(18px)}
+.user-appbar .app-brand {justify-content:flex-start;gap:10px}
+.user-appbar .social-logo {width:38px;height:38px;border-radius:11px;box-shadow:none}
+.user-appbar .app-wordmark {font-size:18px;letter-spacing:.07em;color:var(--text)}
+.user-appbar .app-search {height:42px;border:1px solid var(--border);background:#f6f7fa;border-radius:12px;box-shadow:none;padding:0 14px;max-width:450px}
+.user-appbar .app-search input {font-size:13px}
+.user-appbar .app-search kbd {font-size:10px;border:1px solid #e1e5ed;background:white;border-radius:5px;padding:2px 5px;white-space:nowrap}
+.user-appbar>nav>a {gap:5px;font-size:inherit!important;border:0;position:relative;color:var(--muted)}
+.user-appbar>nav>a::before {display:none!important}
+.user-appbar>nav>a small {font-size:11px;letter-spacing:0}
+.user-appbar>nav>a.active {color:var(--accent);border-bottom:2px solid var(--accent);background:transparent}
+.user-appbar>nav>a svg {width:21px;height:21px}
+.user-appbar .app-actions {gap:12px}
+.user-appbar .notice {background:transparent;border:1px solid var(--border);border-radius:50%;width:38px;height:38px;color:var(--muted)}
+.user-appbar .account-trigger {border:0;background:transparent;gap:9px}
+.user-appbar .social-avatar,.avatar {box-shadow:none;background:#e9edff;color:#4654bf;font-weight:650}
+.user-appbar .account-trigger b {font-size:12px}
+.user-appbar .app-actions>.language-switcher select {border-color:var(--border);background:var(--surface);border-radius:9px;font-size:12px}
+.account-menu,.notifications-menu {border:1px solid var(--border);box-shadow:0 16px 60px #17233b1a;border-radius:16px}
+.account-menu a,.account-menu button {font-size:13px;min-height:42px}
+.notifications-menu p,.notification-row p {font-size:13px}
+.notifications-menu p small,.notifications-menu>header span,.empty-notices small {font-size:11px}
+/* Feed: independent, bounded sidebar rather than a document-length menu. */
+.social-layout {max-width:1400px;grid-template-columns:244px minmax(0,680px) minmax(240px,280px);gap:32px;padding:32px 28px 72px;align-items:start}
+.social-left {padding:0 14px 12px 0;top:100px;max-height:calc(100dvh - 124px);overflow-y:auto;overflow-x:hidden;border-radius:0;scrollbar-width:thin;scrollbar-color:#d9deea transparent;gap:0;overscroll-behavior:contain}
+.social-left .side-primary {display:flex;flex-direction:column;gap:5px;padding-bottom:22px;border-bottom:1px solid var(--border)}
+.social-left .side-nav-item {min-height:46px;padding:8px 12px;gap:12px;box-shadow:none;border:0;border-radius:11px;transform:none;text-align:start}
+.social-left .side-nav-item b {font-size:13px;line-height:1.4;font-weight:600}
+.social-left .side-nav-icon {width:28px!important;height:28px!important;flex-basis:28px;background:transparent!important;border:0!important;box-shadow:none!important;color:#7a8496!important}
+.social-left .side-profile-avatar {width:28px;height:28px;flex-basis:28px;background:#e4e8ff;font-size:12px;color:var(--accent)}
+.social-left .side-nav-item:hover,.social-left .side-nav-item.is-selected {background:#e9edf5;color:var(--text);box-shadow:none;border-color:transparent;transform:none}
+.social-left .side-nav-item.is-selected::before {display:none}
+.social-left .side-nav-item.side-create {background:var(--accent);color:white;margin-top:9px;justify-content:center;min-height:44px;box-shadow:0 4px 10px #4d5cdb15}
+.social-left .side-create .side-nav-icon {color:#fff!important}
+.social-left .side-create:hover {background:#3c4ac2}
+.side-topics-heading {display:flex;align-items:center;justify-content:space-between;padding:20px 12px 10px}
+.social-left .side-nav-label {padding:0;font-size:10px;letter-spacing:.12em;color:#7c8798;font-weight:700}
+.social-left .side-reset {padding:3px 8px;font-size:11px;color:var(--accent);background:var(--accent-soft);min-height:26px}
+.social-left .side-topic-list {gap:2px}
+.social-left .topic-group {min-width:0}
+.social-left .side-topic {width:100%;min-height:40px;padding:8px 12px;gap:11px;border:0;border-radius:9px;transform:none;text-align:start}
+.social-left .side-topic>span:not(.topic-mark) {font-size:12px;font-weight:500;line-height:1.4;flex:1}
+.social-left .topic-mark {width:24px;height:24px;flex:0 0 24px;display:grid;place-items:center;border:1px solid #e0e5ed;border-radius:7px;background:#fff;color:#75829a;font-size:10px!important;font-weight:700!important;box-shadow:none}
+.social-left .side-topic>svg {width:13px;height:13px;color:#a5afbf;opacity:0;flex-shrink:0}
+.social-left .side-topic:hover,.social-left .side-topic.is-selected {background:var(--accent-soft);color:var(--accent);transform:none}
+.social-left .side-topic:hover>svg,.social-left .side-topic.is-selected>svg {opacity:1}
+.topic-group details {margin:0 10px 5px 46px;border-inline-start:1px solid #dce1eb;padding-inline-start:10px}
+.topic-group summary {display:flex;align-items:center;gap:6px;cursor:pointer;padding:5px 0;font-size:10px;line-height:1.5;color:var(--muted);list-style:none}
+.topic-group summary::-webkit-details-marker {display:none}
+.topic-group summary svg {width:12px;height:12px;flex-shrink:0;transition:rotate .2s}
+.topic-group details[open]>summary svg {rotate:90deg}
+.social-left .side-topic.is-subcategory {padding:7px 0;min-height:34px}
+.social-left .is-subcategory .topic-mark {display:none}
+.social-left .is-subcategory>span {font-size:11px!important}
+.social-left .side-more {margin:10px 0 0;padding:10px 14px;justify-content:space-between;color:var(--muted);font-size:12px;min-height:40px}
+.side-more svg {width:14px;height:14px;rotate:90deg}
+.side-more[aria-expanded=true] svg {rotate:-90deg}
+.feed-intro {padding:0 0 24px}
+.feed-intro>span {font-size:10px;font-weight:650;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.feed-intro h1 {font-size:clamp(24px,2.3vw,32px);line-height:1.2;letter-spacing:-.04em;margin:9px 0}
+.feed-intro p {font-size:13px;color:var(--muted);margin:0}
+.composer,.social-card,.social-right section {border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.composer {padding:18px}
+.composer>button:nth-child(2) {border:0;border-radius:10px;background:#f4f6f9;font-size:13px}
+.composer footer button {font-size:11px;font-weight:550}
+.feed-tabs {gap:8px;margin:20px 0 16px;padding:4px;background:#eaeef4;border-radius:11px}
+.feed-tabs button {border:0;border-radius:8px;padding:8px 18px;color:var(--muted);font-size:12px}
+.feed-tabs button.active {border:0;background:#fff;color:var(--text);box-shadow:0 2px 4px #17233b08}
+.feed-tabs span {padding:0 12px 0 0;font-size:10px}
+.social-card {margin-bottom:22px;transition:border-color .2s;box-shadow:var(--shadow)}
+.social-card:hover {transform:none;box-shadow:var(--shadow);border-color:#cdd5e4}
+.social-card>header {padding:22px 24px 16px}
+.social-card header b {font-size:13px;font-weight:650}
+.social-card header small {font-size:11px;color:var(--muted)}
+.social-card>a>h2 {font-size:25px;line-height:1.3;letter-spacing:-.025em;margin:0 24px 12px}
+.social-card .timeline-description {margin-inline:24px;font-size:14px;line-height:1.7;color:#626f82}
+.social-card .timeline-description p {font-size:14px;line-height:1.7}
+.social-card img {min-height:0;max-height:440px;object-fit:cover}
+.social-card>footer button,.social-card>footer a {font-size:12px!important;font-weight:550}
+.social-right {top:100px}
+.social-right section {padding:22px}
+.social-right h3 {font-size:14px;font-weight:650;letter-spacing:-.02em}
+.social-right section>a {gap:12px;margin:18px 0}
+.social-right section>a>span {font-size:22px;font-weight:500;line-height:1.3;color:#c1c9d6}
+.social-right section>a b {font-size:12px;line-height:1.5;font-weight:600}
+.social-right section>a small {font-size:10px;color:var(--muted)}
+.suggest b {font-size:12px}
+.suggest small {font-size:10px}
+.suggest button,.follow-button.compact {font-size:10px;padding:7px 10px;min-height:32px}
+.feed-empty,.library-empty,.profile-empty,.search-empty {padding:48px 24px;border:1px dashed #d6ddea;border-radius:16px;background:#fff;color:var(--muted)}
+/* All page surfaces share the same type scale and restrained palette. */
+.discover-hero {height:310px;background:radial-gradient(ellipse at 80% 0,#334a79,transparent 65%),#17253e;padding-block:52px}
+.discover-hero h1 {font-size:46px;letter-spacing:-.045em;line-height:1.12}
+.discover-hero p {font-size:15px;max-width:580px;line-height:1.65;color:#c2cbdf}
+.discover-hero span {color:#aebfec;font-size:11px}
+.discover-orbit b {background:#ffffff0c;color:#fff;box-shadow:none;border:1px solid #ffffff26}
+.discover-topics {box-shadow:var(--shadow);border-radius:13px;padding:7px;margin-bottom:32px}
+.discover-topics button {font-size:12px;padding:12px 16px}
+.discover-featured,.discover-cards>article,.discover-rail>section,.library-grid>article,.search-results,.search-layout>aside,.profile-about,.profile-stats,.profile-tip,.profile-form,.writer-form,.author-content>section,.author-content>aside {border-color:var(--border);box-shadow:var(--shadow);border-radius:var(--radius)}
+.discover-featured h2 {font-size:29px;line-height:1.25}
+.discover-featured p,.discover-create p {font-size:14px;line-height:1.65}
+.discover-featured>div>small,.discover-cards header>small,.discover-heading small {font-size:10px;letter-spacing:.07em}
+.discover-featured footer,.discover-cards footer {background:transparent;color:var(--muted);padding:14px 0 0;font-size:11px;gap:10px}
+.discover-cards>article>div {padding:20px}
+.discover-cards h3 {font-size:20px;line-height:1.35;letter-spacing:-.02em}
+.discover-cards p {font-size:13px;line-height:1.65}
+.discover-heading h2 {font-size:26px;letter-spacing:-.03em}
+.discover-heading>span {font-size:12px}
+.discover-rail section>a strong {font-size:12px;line-height:1.5}
+.discover-rail section>a small,.discover-writer small {font-size:10px}
+.discover-writer b {font-size:12px}
+.discover-rail h3 {font-size:14px}
+.discover-create>a {font-size:12px;background:var(--accent);min-height:40px}
+.library-heading h1,.search-results>h1 {font-size:38px;letter-spacing:-.04em;line-height:1.15}
+.library-heading p {font-size:14px;color:var(--muted);line-height:1.65}
+.library-heading>div>span,.library-meta>span {font-size:11px;color:var(--accent)}
+.library-grid h2 {font-size:22px;line-height:1.35;letter-spacing:-.025em}
+.library-card-body p {font-size:14px;line-height:1.65}
+.library-card-body footer {font-size:11px;background:transparent;color:var(--muted)}
+.library-meta {gap:12px}
+.library-heading>a,.library-empty>a {font-size:13px;min-height:42px}
+.search-results article p {font-size:14px;line-height:1.6}
+.search-results article small {font-size:11px}
+.search-results h2 {font-size:23px;letter-spacing:-.025em;line-height:1.3}
+.search-results>nav button,.search-layout>aside button {font-size:13px;min-height:42px}
+.search-layout>aside h3 {font-size:15px}
+.account-promo {background:radial-gradient(ellipse at 0 100%,#364c7b,transparent 70%),#17253e}
+.account-promo h1 {letter-spacing:-.05em;line-height:1.07}
+.account-promo h1 em {color:#b2c0ff}
+.account-promo .kicker {color:#b2c0ff}
+.account-proof {display:none}
+.auth-card {border:1px solid var(--border);border-radius:22px;box-shadow:0 12px 48px #192b4b08;padding:36px}
+.auth-card h2 {font-size:34px;line-height:1.15;letter-spacing:-.04em}
+.auth-card>p {font-size:14px;line-height:1.65;color:var(--muted)}
+.auth-card label,.profile-form label,.writer-form label {font-size:12px;font-weight:600}
+.auth-card input,.auth-card textarea,.profile-form input,.profile-form textarea,.profile-form select,.writer-form input,.writer-form textarea,.writer-form select,.create-post input,.create-post textarea,.create-post select {font-size:14px;line-height:1.5;padding:12px 14px;border:1px solid #dce2eb;background:#fafbfc;border-radius:10px;min-height:46px}
+.auth-tabs button {font-size:13px;min-height:42px}
+.auth-card>small {font-size:11px;line-height:1.6}
+.auth-submit,.publish-button {background:var(--accent);border-radius:10px;min-height:46px;font-size:13px;box-shadow:none}
+.interest-picker legend {font-size:12px}
+.interest-picker>p,.interest-picker button {font-size:11px}
+.profile-cover,.author-cover {background:radial-gradient(ellipse at 80% 10%,#465e94,transparent 70%),#1d2d49}
+.profile-name h1,.author-identity h1 {font-size:36px;letter-spacing:-.04em}
+.profile-name p,.author-identity p,.profile-about p,.author-content>aside p {font-size:14px;line-height:1.65}
+.profile-tabs button {font-size:13px;min-height:46px}
+.profile-section-heading h2,.author-content h2 {font-size:24px;letter-spacing:-.03em}
+.profile-section-heading small,.profile-section-heading>span {font-size:11px}
+.profile-story h3,.author-posts h3 {font-size:20px;line-height:1.35}
+.profile-story p,.author-posts p {font-size:14px;line-height:1.6}
+.profile-about h3 {font-size:15px}
+.profile-about>div>span {font-size:13px}
+.profile-about>div>b,.profile-about>small {font-size:10px}
+.profile-stats span {font-size:11px}
+.profile-tip b,.profile-tip p {font-size:12px}
+.profile-form h1,.writer-form h1 {font-size:30px;letter-spacing:-.035em}
+.author-identity footer {font-size:12px;flex-wrap:wrap}
+.author-identity small {font-size:10px}
+.author-location {color:var(--muted);font-size:12px}
+.interest-tags i,.author-interests span {font-size:11px}
+/* Comfortable editorial reading and composing. */
+.seo-story .story-article {border-color:var(--border);box-shadow:var(--shadow);border-radius:20px}
+.seo-story .story-header {background:transparent;border-radius:20px 20px 0 0}
+.seo-story h1 {font-size:clamp(36px,4.2vw,54px);line-height:1.12;letter-spacing:-.04em}
+.seo-story .lead {font-size:20px;color:var(--muted);line-height:1.65}
+.seo-story .story-author b {font-size:13px}
+.seo-story .story-author small {font-size:11px;flex-wrap:wrap}
+.seo-story .story-social {top:76px;box-shadow:none}
+.seo-story .db-body {line-height:1.85}
+.seo-story .db-body p {font-size:19px;line-height:1.85}
+.seo-story .story-shell>aside {box-shadow:var(--shadow);border-color:var(--border)}
+.create-post form {border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow)}
+.create-post label {font-size:13px}
+.compose-modal {border-radius:20px;box-shadow:0 24px 100px #15233d30}
+.compose-modal>input,.compose-modal>select {font-size:14px}
+.compose-person b {font-size:13px}
+.compose-person small,.add-media {font-size:11px}
+.compose-modal .post-title {font-size:24px}
+.content-pagination {gap:12px}
+.content-pagination button {min-height:42px;font-size:12px;border-radius:9px}
+.content-pagination span {font-size:12px}
+/* Editorial workspace uses the same palette, without changing access controls. */
+.cms {--admin-accent:var(--accent);--admin-accent-strong:#3b49c0;--admin-soft:var(--accent-soft);--admin-ink:var(--text);--admin-muted:var(--muted);background:var(--canvas)}
+.cms .cms-side {background:#17253e;border:0}
+.cms .cms-side nav button {font-size:13px;min-height:44px;border-radius:10px}
+.cms .cms-side nav button.active {background:#ffffff14;color:#fff}
+.cms .panel,.cms .stat-card {border-color:var(--border);border-radius:16px;box-shadow:var(--shadow)}
+.cms .cms-heading h1,.cms .table-head h1 {letter-spacing:-.04em}
+.cms .cms-heading p,.cms .table-head p,.cms .table-tools {font-size:13px}
+.cms input,.cms select,.cms textarea {font-size:13px;border-radius:9px}
+.cms .post-row,.cms .user-row {font-size:12px;min-height:62px}
+.admin-access {background:var(--canvas)}
+.admin-access>section {box-shadow:var(--shadow);border-color:var(--border)}
+.admin-access p {font-size:14px;line-height:1.7}
+@media (min-width:701px) and (max-width:1200px) {
+ .social-top.upgraded.user-appbar {grid-template-columns:44px minmax(140px,1fr) 200px max-content;gap:16px;padding-inline:24px}
+ .user-appbar .app-wordmark,.user-appbar .account-trigger b,.user-appbar .account-trigger em {display:none}
+ .social-layout {grid-template-columns:220px minmax(0,1fr);max-width:1050px;gap:28px}
+ .social-right {display:none}
+}
+@media (min-width:701px) and (max-width:900px) {
+ .social-top.upgraded.user-appbar {grid-template-columns:44px minmax(180px,1fr) max-content}
+ .user-appbar>.app-search {display:none!important}
+}
+@media (max-width:700px) {
+ .social-layout {display:block;padding:18px 16px 40px}
+ .social-left {display:flex;position:static;max-height:none;padding:0 0 18px;overflow:visible;border-bottom:1px solid var(--border);margin-bottom:24px}
+ .social-left .side-primary {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding:0;border:0;gap:8px}
+ .social-left .side-primary>.side-nav-item:first-child {display:none}
+ .social-left .side-nav-item {flex-direction:column;gap:4px;padding:10px 4px;background:#fff;border:1px solid var(--border);min-height:70px}
+ .social-left .side-nav-item b {font-size:11px}
+ .social-left .side-nav-item.side-create {margin:0;min-height:70px}
+ .side-topics-heading {padding:18px 0 8px}
+ .social-left .side-topic-list {display:flex;flex-direction:row;overflow-x:auto;gap:6px;scrollbar-width:thin;padding-bottom:4px}
+ .social-left .topic-group {flex:0 0 auto}
+ .social-left .side-topic {background:white;border:1px solid var(--border);min-height:38px;padding:6px 10px;white-space:nowrap}
+ .social-left .side-topic>span:not(.topic-mark) {font-size:11px}
+ .social-left .side-topic>svg,.social-left .topic-mark {display:none}
+ .topic-group details {margin:6px 0 0;padding-inline-start:7px;max-width:190px}
+ .topic-group summary {font-size:10px;white-space:normal}
+ .social-left .side-more {padding:6px 0;margin-top:6px;min-height:32px;align-self:flex-start;gap:10px}
+ .user-appbar>nav>a::before {display:none!important}
+ .social-top.upgraded.user-appbar>nav>a small {font-size:10px!important}
+ .user-appbar .app-search input {font-size:12px!important}
+ .feed-intro {padding-bottom:20px}
+ .feed-intro h1 {font-size:28px}
+ .feed-intro p {font-size:12px}
+ .composer {padding:14px}
+ .composer>button:nth-child(2) {font-size:12px;padding:12px}
+ .composer footer button {font-size:10px;padding:8px 5px}
+ .feed-tabs {gap:4px}
+ .feed-tabs button {padding:8px 16px}
+ .social-card>header {padding:18px 18px 14px}
+ .social-card>a>h2 {font-size:22px;margin-inline:18px}
+ .social-card .timeline-description {margin-inline:18px}
+ .social-card>footer button,.social-card>footer a {font-size:11px!important}
+ .social-card img {min-height:0;max-height:none}
+ .discover-hero {height:auto;min-height:260px;padding:36px 22px 56px}
+ .discover-hero h1 {font-size:36px}
+ .discover-hero p {font-size:14px}
+ .discover-topics {margin-inline:16px}
+ .discover-layout {padding-inline:16px}
+ .discover-featured h2 {font-size:25px}
+ .discover-cards h3 {font-size:22px}
+ .discover-cards p {font-size:14px}
+ .library-page {padding-inline:16px}
+ .library-heading h1 {font-size:32px}
+ .account-promo {padding:32px 24px;min-height:240px}
+ .account-promo h1 {font-size:39px}
+ .account-form {padding:20px 16px 40px}
+ .auth-card {padding:26px 22px}
+ .auth-card h2 {font-size:30px}
+ .author-identity {padding-inline:20px}
+ .profile-name h1,.author-identity h1 {font-size:28px}
+ .search-layout {padding-inline:16px}
+ .search-results>h1 {font-size:29px}
+ .search-results h2 {font-size:21px}
+ .seo-story .story-social {top:64px}
+ .seo-story .story-article {border-radius:0}
+ .seo-story h1 {font-size:36px;line-height:1.14}
+ .seo-story .db-body p {font-size:18px;line-height:1.8}
+ .seo-story .story-author {flex-wrap:wrap}
+ .create-post form {margin-inline:16px}
+}
+@media (prefers-reduced-motion:reduce) {
+ *,*::before,*::after {animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+/* A filtered ancestor traps fixed mobile navigation inside the header. */
+@media(max-width:700px) {
+ .social-top.upgraded.user-appbar {backdrop-filter:none!important;transform:none!important;filter:none!important}
+ .social-top.upgraded.user-appbar>nav>a::before {display:none!important;content:none!important}
+}
+.profile-v2 .profile-identity h1 {font-size:36px;font-weight:700;letter-spacing:-.04em}
+.profile-story-list .profile-story-copy h3 {font-size:18px;line-height:1.4;font-weight:650}
+.profile-story-list .profile-story-copy p {font-size:13px;line-height:1.6}
+.profile-story-list .profile-story-copy small {font-size:11px}
+.profile-story-actions button {font-size:11px;min-height:34px}
+@media(max-width:700px) {.profile-v2 .profile-identity h1 {font-size:28px}}
+.comments-v2 .comments-head>div>p,.comments-v2 .no-comments p {font-size:13px;line-height:1.6}
+.comments-v2 .comments-kicker,.comments-v2 .comment-sort,.comments-v2 .comment-sort select {font-size:11px}
+.comments-v2 .comment-compose-body label {font-size:12px}
+.comments-v2 .comment-box textarea {font-size:14px;line-height:1.7}
+.comments-v2 .comment-box footer {background:transparent;padding:10px 0 0;gap:10px}
+.comments-v2 .comment-box footer small {font-size:11px}
+.comments-v2 .comment-box footer button,.comments-v2 .comment-signin a {font-size:12px;min-height:40px;background:var(--accent)}
+.comments-v2 .comment-bubble header b {font-size:13px}
+.comments-v2 .comment-bubble header small {font-size:10px}
+.comments-v2 .comment-bubble>p {font-size:14px!important;line-height:1.7!important}
+.comments-v2 .comment-signin p {font-size:12px}
+[dir=rtl] .topic-group details {margin-inline:46px 10px}
+[dir=rtl] .side-topic>svg,[dir=rtl] .topic-group summary svg {scale:-1 1}
+@media(max-width:700px) {[dir=rtl] .topic-group details {margin:6px 0 0}}
+.cms .table-head {flex-wrap:wrap;gap:18px}
+.cms .inline-form {display:flex;flex-wrap:wrap;max-width:100%;gap:8px}
+.cms .inline-form input,.cms .inline-form select {min-width:0;max-width:100%;flex:1 1 160px}
+.cms .inline-form button {flex:0 0 auto}
+.cms .table-tools {flex-wrap:wrap;gap:12px}
+.cms .table-tools label {min-width:0;max-width:100%}
+.cms .table-tools input {max-width:100%;min-width:0}
+.cms .access-head-actions {display:flex;flex-wrap:wrap;gap:10px;max-width:100%}
+.cms .compose label {font-size:12px}
+.cms .category-grid article {min-width:0}
+.cms .category-grid h3,.cms .category-grid p {overflow-wrap:anywhere}
+/* Older mobile rules hid the entire newsroom navigation, including its drawer. */
+@media(max-width:760px) {
+ .cms .cms-side {flex-direction:column;align-items:stretch;overflow-y:auto}
+ .cms .cms-side nav {display:flex;flex-direction:column}
+ .cms .cms-side .workspace {display:block}
+ .cms .cms-side .side-bottom {display:block;margin-top:auto;padding-top:24px}
+}
