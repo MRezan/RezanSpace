@@ -123,3 +123,18 @@ To accelerate or recover a run, supply its ID as `resume_run_id`. The workflow v
 ### Hosting certificate chain
 
 InfinityFree serves the Google Trust WR1 leaf without its intermediate. `automation/certs/google-wr1.pem` is the public intermediate from `https://i.pki.goog/wr1.crt`. Actions supply it as a chain-building certificate alongside the default trusted roots; hostname, expiry, signatures and root trust remain verified. This does not fix the provider’s missing chain for other non-browser clients.
+
+
+### Recover a failed category batch
+
+Supply the earlier hourly run ID in `resume_run_id`. Recovery verifies repository,
+main branch, workflow identity and artifact expiry, then restores its source plan,
+validated English originals, completed images and language outputs. Missing or
+failed outputs alone are generated. Successful originals skip the model download.
+Use this for run `42015683456`, whose Tech Guides draft tripped the old prose/code
+validator. Literal tutorial code remains escaped and is now accepted; invalid
+prose formatting/links are repaired at the section level before completing a draft.
+
+Long generation runs build the **latest main-branch website** at the deployment
+stage (`clean: false` preserves the generated batch). This prevents an earlier
+content run from restoring an obsolete UI after a newer UI fix was deployed.

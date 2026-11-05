@@ -9,6 +9,10 @@ on:
         description: 'Preview all categories and languages without publishing'
         type: boolean
         default: true
+      resume_run_id:
+        description: 'Reuse completed category artifacts from an earlier main-branch hourly run'
+        type: string
+        default: ''
 permissions:
   contents: read
   actions: read
@@ -35,6 +39,9 @@ jobs:
     timeout-minutes: 40
     outputs:
       topics: ${{ steps.plan.outputs.topics }}
+      resume_originals: ${{ steps.resume.outputs.originals || '[]' }}
+      resume_covers: ${{ steps.resume.outputs.covers || '[]' }}
+      resume_languages: ${{ steps.resume.outputs.languages || '[]' }}
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
@@ -63,6 +70,21 @@ jobs:
       - name: Initialize a preview snapshot
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
         run: mkdir -p work/blog && printf '[]' > work/blog/snapshot.json
+      - name: Validate the recovery source and reusable category outputs
+        if: inputs.resume_run_id != ''
+        id: resume
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESUME_RUN_ID: ${{ inputs.resume_run_id }}
+        run: python automation/resume_batch.py
+      - name: Reuse the source run's complete category evidence plan
+        if: inputs.resume_run_id != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: batch-plan
+          path: work/blog
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.resume_run_id }}
       - name: Restore this batch's source plan when retrying
         if: github.run_attempt > 1
         continue-on-error: true
@@ -93,6 +115,14 @@ jobs:
         with: {python-version: '3.12'}
       - uses: actions/download-artifact@v4
         with: {name: batch-plan, path: work/blog}
+      - name: Reuse the source run's validated original
+        if: ${{ inputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_originals), matrix.topic) }}
+        uses: actions/download-artifact@v4
+        with:
+          name: category-original-${{ matrix.topic }}
+          path: work/blog
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.resume_run_id }}
       - name: Restore completed original on retry
         if: github.run_attempt > 1
         continue-on-error: true
@@ -101,13 +131,15 @@ jobs:
           name: category-original-${{ matrix.topic }}
           path: work/blog
       - uses: actions/cache@v4
+        if: ${{ !contains(fromJSON(needs.prepare.outputs.resume_originals), matrix.topic) }}
         with:
           path: .cache/huggingface/hub/models--unsloth--Qwen3-4B-Instruct-2507-GGUF
           key: qwen-a06e946bb6b655725eafa393f4a9745d460374c9-cpu-v1
       - name: Generate and evidence-review the English original
         env: {TOPIC: '${{ matrix.topic }}'}
         run: |
-          pip install -r automation/requirements.txt -r automation/requirements-text.txt
+          pip install -r automation/requirements.txt
+          if [ ! -f "work/blog/topics/$TOPIC/en.json" ]; then pip install -r automation/requirements-text.txt; fi
           python -u automation/blog.py english --work "work/blog/topics/$TOPIC"
           mkdir -p "artifact/topics/$TOPIC"
           cp "work/blog/topics/$TOPIC/manifest.json" "work/blog/topics/$TOPIC/en.json" "artifact/topics/$TOPIC/"
@@ -135,6 +167,14 @@ jobs:
         with:
           name: category-original-${{ matrix.topic }}
           path: work/blog
+      - name: Reuse the source run's completed illustration
+        if: ${{ inputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_covers), matrix.topic) }}
+        uses: actions/download-artifact@v4
+        with:
+          name: category-cover-${{ matrix.topic }}
+          path: work/blog
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.resume_run_id }}
       - name: Restore completed illustration on retry
         if: github.run_attempt > 1
         continue-on-error: true
@@ -179,6 +219,14 @@ jobs:
         with:
           name: category-original-${{ matrix.topic }}
           path: work/blog
+      - name: Reuse the source run's completed language
+        if: ${{ inputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_languages), format('{0}-{1}', matrix.topic, matrix.language)) }}
+        uses: actions/download-artifact@v4
+        with:
+          name: category-language-${{ matrix.topic }}-${{ matrix.language }}
+          path: work/blog
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.resume_run_id }}
       - name: Restore completed language on retry
         if: github.run_attempt > 1
         continue-on-error: true
@@ -187,6 +235,7 @@ jobs:
           name: category-language-${{ matrix.topic }}-${{ matrix.language }}
           path: work/blog
       - uses: actions/cache/restore@v4
+        if: ${{ matrix.language != 'en' && !contains(fromJSON(needs.prepare.outputs.resume_languages), format('{0}-{1}', matrix.topic, matrix.language)) }}
         with:
           path: .cache/huggingface/hub/models--unsloth--Qwen3-4B-Instruct-2507-GGUF
           key: qwen-a06e946bb6b655725eafa393f4a9745d460374c9-cpu-v1
@@ -248,6 +297,13 @@ jobs:
           npm ci --prefix automation
           npx --prefix automation playwright install --with-deps chromium
           node automation/delivery.mjs publish-batch
+      - name: Build the latest approved website without discarding generated content
+        if: ${{ github.event_name == 'schedule' || !inputs.dry_run }}
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          clean: false
+          persist-credentials: false
       - name: Build all article pages and refresh the complete sitemap
         if: ${{ github.event_name == 'schedule' || !inputs.dry_run }}
         env:

@@ -261,6 +261,13 @@ jobs:
           npm ci --prefix automation
           npx --prefix automation playwright install --with-deps chromium
           node automation/delivery.mjs publish
+      - name: Build the latest approved website without discarding generated content
+        if: ${{ github.event_name == 'schedule' || !inputs.dry_run }}
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          clean: false
+          persist-credentials: false
       - name: Build the real multilingual static site
         if: ${{ github.event_name == 'schedule' || !inputs.dry_run }}
         env:

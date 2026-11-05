@@ -130,7 +130,7 @@ checked after live deployment. These are technical SEO foundations, not a promis
 of indexing dates or search rankings.
 
 Validation for hourly/category/SEO changes (2026-11-05): all 16 categories selected
-real, distinct source evidence; 24 Python automation/deployment tests, 23 static
+real, distinct source evidence; 28 Python automation/deployment tests, 23 static
 SEO/export tests, five category/sitemap-limit tests and PHP backend checks passed.
 Responsive review covers 80 route/viewport combinations. The sidebar retains the
 original icon-tile style and exposes all topics in a flat list without subcategories.

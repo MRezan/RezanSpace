@@ -104,6 +104,15 @@ def plan(snapshot,output,category=None):
  if not successful_feeds:raise BlogError('All source feeds failed; no article will be invented')
  return False
 
+def validate_plain_paragraphs(paragraphs):
+ for paragraph in paragraphs:
+  # Literal tutorial code is escaped when rendered, not executed as HTML.
+  # Keep prose free of invented links and rich-HTML wrappers.
+  prose=re.sub(r'`[^`\n]+`','',paragraph)
+  prose=re.sub(r'</?[A-Za-z][A-Za-z0-9:-]*\s*/?>','',prose)
+  if re.search(r'https?://|<[^>]+>',prose):
+   raise BlogError('Paragraph prose contains a URL or HTML markup; use inline code for examples and source citations for links')
+
 def validate_article(article,language,manifest,detect_language=True):
  from jsonschema import validate
  validate(article,SCHEMA)
@@ -112,7 +121,7 @@ def validate_article(article,language,manifest,detect_language=True):
   if not set(section['source_ids'])<=permitted:raise BlogError('Article cited a source not in its evidence packet')
  text=' '.join(p for section in article['sections'] for p in section['paragraphs'])
  if len(text)<1400:raise BlogError('Article is too short to provide a useful explanation')
- if re.search(r'https?://|<[^>]+>',text):raise BlogError('Article paragraphs must be plain text without invented URLs or markup')
+ validate_plain_paragraphs([p for section in article['sections'] for p in section['paragraphs']])
  if detect_language:
   import langid
   expected='pt' if language=='pt-BR' else language
@@ -142,6 +151,7 @@ def generate(manifest,language,english=None):
   'Explain why the development matters and its limitations. Avoid medical, investment or legal advice. '
   'Use natural headings without keyword stuffing or copied source sentences. All text fields must be plain text. '
   'The article must provide a full explanation rather than a short news summary. '
+  'Do not put URLs or HTML formatting in prose; citations are appended automatically. Wrap literal code examples in backticks. '
   'The title should be under 100 characters and excerpt under 160 characters. '
   'image_prompt must be English: a relevant editorial illustration of the actual topic, objects or architecture, no text, logos or invented documentary evidence. '
   'image_alt must be in the article language and describe the illustration. Return only complete schema-valid JSON.')
@@ -166,10 +176,11 @@ def generate(manifest,language,english=None):
    section_feedback=''
    for section_attempt in range(3):
     body=request([{'role':'system','content':instructions},{'role':'user','content':json.dumps(evidence,ensure_ascii=False)+'\nWrite this section as two substantial paragraphs, about 150–200 words total or a natural equivalent in '+LANGUAGES[language]+'. Explain specifics supported by the sources. Do not repeat other sections. Each paragraph must be 180–1100 characters. Return only the paragraphs JSON object.'+section_feedback}],paragraph_schema,2000)
-    try:validate_json(body,paragraph_schema);break
-    except ValidationError:
+    try:
+     validate_json(body,paragraph_schema);validate_plain_paragraphs(body['paragraphs']);break
+    except (ValidationError,BlogError):
      if section_attempt==2:raise BlogError('Section paragraph length or structure failed validation') from None
-     section_feedback='\nCorrect the last attempt: return exactly two informative paragraphs, each between 180 and 1100 characters. Keep the complete explanation within those bounds.'
+     section_feedback='\nCorrect only this section: return exactly two informative plain-text paragraphs, each between 180 and 1100 characters. Do not include prose URLs or HTML formatting. Citations are added automatically. Put literal code examples in backticks. Keep all claims grounded in the provided evidence.'
    section['heading']=metadata_text(section['heading'],120);section['paragraphs']=body['paragraphs'];section['source_ids']=source_ids
   try:
    validate_article(article,language,manifest)

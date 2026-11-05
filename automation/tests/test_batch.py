@@ -51,6 +51,41 @@ class BatchTests(unittest.TestCase):
   article={'title':'Example','excerpt':'Example excerpt','image_alt':'Example image','sections':[]}
   manifest={'key':'ai-topic-one','category':'Science','sources':[]}
   self.assertEqual(blog.payload(article,manifest,'en')['author'],blog.payload(article,manifest,'bn')['author'])
+ def test_tutorial_code_is_accepted_while_prose_links_and_html_are_rejected(self):
+  blog.validate_plain_paragraphs(['Use the <dialog> element and call `showModal()` for the example.'])
+  blog.validate_plain_paragraphs(['The example origin is `https://example.com` and the literal tag is `<button>`.'])
+  for invalid in ['Read https://invented.invalid as proof.','<div class="article">Rich HTML wrapper</div>']:
+   with self.assertRaises(blog.BlogError):blog.validate_plain_paragraphs([invalid])
+ def test_recovery_accepts_only_trusted_retained_category_artifacts(self):
+  import resume_batch
+  run={'head_repository':{'full_name':'MRezan/RezanSpace'},'head_branch':'main','event':'workflow_dispatch','path':'.github/workflows/hourly-blog.yml'}
+  artifacts=[{'name':'batch-plan'},{'name':'category-original-technology'},{'name':'category-cover-technology','expired':True},{'name':'category-language-technology-bn'}]
+  result=resume_batch.validate_batch_checkpoint(run,artifacts,'MRezan/RezanSpace')
+  self.assertEqual(result,{'originals':['technology'],'covers':[],'languages':['technology-bn']})
+  with self.assertRaises(ValueError):resume_batch.validate_batch_checkpoint({**run,'head_branch':'untrusted'},artifacts,'MRezan/RezanSpace')
+  with self.assertRaises(ValueError):resume_batch.validate_batch_checkpoint(run,artifacts[1:],'MRezan/RezanSpace')
+ def test_publish_build_uses_current_main_without_deleting_generated_outputs(self):
+  import yaml
+  workflow=yaml.safe_load((ROOT.parent/'.github/workflows/hourly-blog.yml').read_text())
+  checkouts=[step for step in workflow['jobs']['publish']['steps'] if step.get('uses')=='actions/checkout@v4' and step.get('with',{}).get('ref')=='main']
+  self.assertEqual(len(checkouts),1);self.assertIs(checkouts[0]['with']['clean'],False)
+ def test_invalid_prose_is_repaired_in_its_section_without_regenerating_valid_sections(self):
+  import copy
+  from test_blog import article
+  outline=article();outline['sections']=[{'heading':'Explanation '+str(i)} for i in range(5)];calls=[]
+  def request(messages,schema,budget):
+   calls.append(budget)
+   if budget==1800:return copy.deepcopy(outline)
+   if budget==2000:
+    paragraphs=[article()['sections'][0]['paragraphs'][0]]*2
+    if calls.count(2000)==1:paragraphs[0]+=' https://invented.invalid'
+    return {'paragraphs':paragraphs}
+   return {'approved':True,'issues':''}
+  manifest={'key':'evidence','category':'Technology','sources':[{'id':1,'url':'https://example.com','title':'Evidence','text':'Primary evidence'}]}
+  with patch.object(blog,'request',side_effect=request),patch('langid.classify',return_value=('en',1)):
+   result=blog.generate(manifest,'en')
+  self.assertEqual(calls.count(1800),1);self.assertEqual(calls.count(2000),6)
+  self.assertNotIn('invented.invalid',json.dumps(result))
  def test_missing_translation_blocks_the_batch(self):
   with tempfile.TemporaryDirectory() as directory:
    work=Path(directory);self.prepare(work)
