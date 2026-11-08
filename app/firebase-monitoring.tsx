@@ -19,11 +19,11 @@ async function analytics(){
 }
 export function FirebaseMonitoring(){
  const path=usePathname();const [consent,setConsent]=useState<string|null>('loading');const [settings,setSettings]=useState(false);
- useEffect(()=>{try{setConsent(localStorage.getItem(preference));}catch{setConsent('denied');}},[]);
+ useEffect(()=>{function sync(){try{setConsent(localStorage.getItem(preference));}catch{setConsent('denied');}}sync();window.addEventListener('storage',sync);return()=>window.removeEventListener('storage',sync);},[]);
  useEffect(()=>{
   if(consent!=='granted'||privatePage(path)){if(measurement)void measurement.then(value=>{if(value)value.sdk.setAnalyticsCollectionEnabled(value.analytics,false);});return;}
   let active=true;
-  void analytics().then(value=>{if(value&&active&&localStorage.getItem(preference)==='granted'){value.sdk.setAnalyticsCollectionEnabled(value.analytics,true);value.sdk.logEvent(value.analytics,'page_view',{page_location:location.origin+path,page_path:path,page_title:document.title,page_referrer:''});}});
+  void analytics().then(value=>{if(value&&active&&localStorage.getItem(preference)==='granted'){value.sdk.setConsent({analytics_storage:'granted',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'});value.sdk.setAnalyticsCollectionEnabled(value.analytics,true);value.sdk.logEvent(value.analytics,'page_view',{page_location:location.origin+path,page_path:path,page_title:document.title,page_referrer:''});}});
   return()=>{active=false;};
  },[path,consent]);
  useEffect(()=>{
