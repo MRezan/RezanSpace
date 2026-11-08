@@ -136,3 +136,36 @@ Responsive review covers 80 route/viewport combinations. The sidebar retains the
 original icon-tile style and exposes all topics in a flat list without subcategories.
 
 All 15 language homes additionally passed 45 desktop/mobile viewport checks for the shared flat sidebar, compact labels, pinned expansion control and bottom navigation.
+
+
+## Section generation recovery — 2026-11-08
+
+Run `42431029813` failed in eight original-article jobs, all with the generic
+“Section paragraph length or structure failed validation” message; publication
+was correctly blocked. Native decoding intentionally omits string-length bounds
+(to avoid llama.cpp grammar expansion), so valid JSON can still violate Python's
+paragraph limits. The old section retry repeated generic correction instructions
+without reporting the failing lengths or saving completed sections.
+
+The generator now targets 300–700 characters per paragraph inside the unchanged
+180–1100 validation bounds. Where possible it moves complete sentence boundaries
+without removing words; it never clips body text or pads unsupported claims.
+Unrepairable sections get at most three attempts with distinct, measured feedback.
+Public diagnostics expose section/language, schema reason and lengths, not drafts.
+Runtime failures are not blindly retried as content failures.
+
+Validated sections are saved atomically in per-language progress files. Failed
+original/translation jobs retain those files as artifacts, and same-run or trusted
+cross-run recovery restores them. Fingerprints include evidence, language, original
+translation input and generation policy; invalid/stale checkpoints are ignored.
+Final evidence review, requested-language checks and complete 240-post validation
+remain mandatory. A rejected review invalidates the partial draft. Successful
+outputs remove redundant progress files.
+
+Tests: `python -m unittest discover -s automation/tests -v` includes length repair,
+CJK, unchanged literal code, bounded retries, private diagnostics, failure recovery,
+changed evidence, invalid checkpoints, rejected reviews and artifact wiring.
+Recovery of the source run should use current `main` and `resume_run_id=42431029813`
+to reuse the eight completed originals. Rerunning its old jobs uses the old commit.
+These safeguards address the observed failure; external service outages and
+unverifiable drafts still stop safely and retain recoverable work.

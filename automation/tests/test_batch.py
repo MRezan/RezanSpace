@@ -59,9 +59,9 @@ class BatchTests(unittest.TestCase):
  def test_recovery_accepts_only_trusted_retained_category_artifacts(self):
   import resume_batch
   run={'head_repository':{'full_name':'MRezan/RezanSpace'},'head_branch':'main','event':'workflow_dispatch','path':'.github/workflows/hourly-blog.yml'}
-  artifacts=[{'name':'batch-plan'},{'name':'category-original-technology'},{'name':'category-cover-technology','expired':True},{'name':'category-language-technology-bn'}]
+  artifacts=[{'name':'batch-plan'},{'name':'category-original-technology'},{'name':'category-cover-technology','expired':True},{'name':'category-language-technology-bn'},{'name':'category-progress-education-en'},{'name':'category-progress-culture-fr','expired':True}]
   result=resume_batch.validate_batch_checkpoint(run,artifacts,'MRezan/RezanSpace')
-  self.assertEqual(result,{'originals':['technology'],'covers':[],'languages':['technology-bn']})
+  self.assertEqual(result,{'originals':['technology'],'progress':['education-en'],'covers':[],'languages':['technology-bn']})
   with self.assertRaises(ValueError):resume_batch.validate_batch_checkpoint({**run,'head_branch':'untrusted'},artifacts,'MRezan/RezanSpace')
   with self.assertRaises(ValueError):resume_batch.validate_batch_checkpoint(run,artifacts[1:],'MRezan/RezanSpace')
  def test_publish_build_uses_current_main_without_deleting_generated_outputs(self):
@@ -86,6 +86,15 @@ class BatchTests(unittest.TestCase):
    result=blog.generate(manifest,'en')
   self.assertEqual(calls.count(1800),1);self.assertEqual(calls.count(2000),6)
   self.assertNotIn('invented.invalid',json.dumps(result))
+ def test_both_generation_phases_preserve_and_restore_partial_checkpoints(self):
+  import yaml
+  workflow=yaml.safe_load((ROOT.parent/'.github/workflows/hourly-blog.yml').read_text())
+  for name in ['originals','translations']:
+   steps=workflow['jobs'][name]['steps']
+   upload=[step for step in steps if step.get('uses')=='actions/upload-artifact@v4' and step.get('with',{}).get('path')=='progress-artifact']
+   self.assertEqual(len(upload),1);self.assertEqual(upload[0]['if'],'always()')
+   restore=[step for step in steps if step.get('name')=='Restore partial validated sections from the source run']
+   self.assertEqual(len(restore),1);self.assertIn('resume_progress',restore[0]['if'])
  def test_missing_translation_blocks_the_batch(self):
   with tempfile.TemporaryDirectory() as directory:
    work=Path(directory);self.prepare(work)

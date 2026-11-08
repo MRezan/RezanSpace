@@ -40,6 +40,7 @@ jobs:
     outputs:
       topics: ${{ steps.plan.outputs.topics }}
       resume_originals: ${{ steps.resume.outputs.originals || '[]' }}
+      resume_progress: ${{ steps.resume.outputs.progress || '[]' }}
       resume_covers: ${{ steps.resume.outputs.covers || '[]' }}
       resume_languages: ${{ steps.resume.outputs.languages || '[]' }}
     steps:
@@ -130,6 +131,21 @@ jobs:
         with:
           name: category-original-${{ matrix.topic }}
           path: work/blog
+      - name: Restore partial validated sections from the source run
+        if: ${{ inputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_progress), format('{0}-en', matrix.topic)) }}
+        uses: actions/download-artifact@v4
+        with:
+          name: category-progress-${{ matrix.topic }}-en
+          path: work/blog
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.resume_run_id }}
+      - name: Restore partial validated sections on retry
+        if: github.run_attempt > 1
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: category-progress-${{ matrix.topic }}-en
+          path: work/blog
       - uses: actions/cache@v4
         if: ${{ !contains(fromJSON(needs.prepare.outputs.resume_originals), matrix.topic) }}
         with:
@@ -149,6 +165,25 @@ jobs:
           path: artifact
           overwrite: true
           retention-days: 7
+      - name: Preserve validated sections even when generation fails
+        if: always()
+        env:
+          TOPIC: ${{ matrix.topic }}
+          LANGUAGE: en
+        run: |
+          if [ -f "work/blog/topics/$TOPIC/$LANGUAGE.progress.json" ]; then
+            mkdir -p "progress-artifact/topics/$TOPIC"
+            cp "work/blog/topics/$TOPIC/$LANGUAGE.progress.json" "progress-artifact/topics/$TOPIC/"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: category-progress-${{ matrix.topic }}-en
+          path: progress-artifact
+          if-no-files-found: ignore
+          overwrite: true
+          retention-days: 7
+
   illustrations:
     needs: [prepare, originals]
     runs-on: ubuntu-24.04
@@ -234,6 +269,21 @@ jobs:
         with:
           name: category-language-${{ matrix.topic }}-${{ matrix.language }}
           path: work/blog
+      - name: Restore partial validated sections from the source run
+        if: ${{ inputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_progress), format('{0}-{1}', matrix.topic, matrix.language)) }}
+        uses: actions/download-artifact@v4
+        with:
+          name: category-progress-${{ matrix.topic }}-${{ matrix.language }}
+          path: work/blog
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.resume_run_id }}
+      - name: Restore partial validated sections on retry
+        if: github.run_attempt > 1
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: category-progress-${{ matrix.topic }}-${{ matrix.language }}
+          path: work/blog
       - uses: actions/cache/restore@v4
         if: ${{ matrix.language != 'en' && !contains(fromJSON(needs.prepare.outputs.resume_languages), format('{0}-{1}', matrix.topic, matrix.language)) }}
         with:
@@ -257,6 +307,25 @@ jobs:
           path: artifact
           overwrite: true
           retention-days: 7
+      - name: Preserve validated sections even when generation fails
+        if: always()
+        env:
+          TOPIC: ${{ matrix.topic }}
+          LANGUAGE: ${{ matrix.language }}
+        run: |
+          if [ -f "work/blog/topics/$TOPIC/$LANGUAGE.progress.json" ]; then
+            mkdir -p "progress-artifact/topics/$TOPIC"
+            cp "work/blog/topics/$TOPIC/$LANGUAGE.progress.json" "progress-artifact/topics/$TOPIC/"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: category-progress-${{ matrix.topic }}-${{ matrix.language }}
+          path: progress-artifact
+          if-no-files-found: ignore
+          overwrite: true
+          retention-days: 7
+
   publish:
     needs: [prepare, originals, illustrations, translations]
     runs-on: ubuntu-24.04

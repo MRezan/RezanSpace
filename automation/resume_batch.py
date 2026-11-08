@@ -13,6 +13,7 @@ def validate_batch_checkpoint(run,artifacts,repository):
  if 'batch-plan' not in names:raise ValueError('Source run has no retained batch plan')
  return {
   'originals':[t['slug'] for t in TOPICS if 'category-original-'+t['slug'] in names],
+  'progress':[t['slug']+'-'+lang for t in TOPICS for lang in LANGUAGES if 'category-progress-'+t['slug']+'-'+lang in names],
   'covers':[t['slug'] for t in TOPICS if 'category-cover-'+t['slug'] in names],
   'languages':[t['slug']+'-'+lang for t in TOPICS for lang in LANGUAGES if 'category-language-'+t['slug']+'-'+lang in names]
  }
