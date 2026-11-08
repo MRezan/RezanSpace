@@ -198,12 +198,15 @@ class DeploymentTests(unittest.TestCase):
     time.sleep(.01)
   with tempfile.TemporaryDirectory() as directory:
    root=Path(directory);files=[]
-   for name in ['_next/a.js','_next/b.js','en/index.html','bn/index.html','sitemap.xml']:
+   for name in ['_next/a.js','_next/b.js','lib/auth.php','api/auth.php','en/index.html','bn/index.html','sitemap.xml']:
     source=root/name;source.parent.mkdir(parents=True,exist_ok=True);source.write_text(name);files.append((source,name))
    config={'REZAN_FTP_HOST':'example.invalid','REZAN_FTP_USER':'test','REZAN_FTP_PASSWORD':'test','REZAN_FTP_DIRECTORY':'rezan.space/htdocs'}
    with patch.object(deploy,'config',return_value=config),patch.object(deploy,'managed_files',return_value=iter(files)),patch.object(deploy.ftplib,'FTP_TLS',FTP):deploy.deploy()
    self.assertEqual(peak,2);self.assertEqual(active,0)
    self.assertTrue(all('_next/' in command for command in commands[:2]))
+   backend=[i for i,c in enumerate(commands) if c.startswith(('STOR lib/','STOR api/'))]
+   pages=[i for i,c in enumerate(commands) if '.html.uploading' in c]
+   self.assertLess(max(backend),min(pages),'Backend must be ready before new account pages can invoke it')
    self.assertEqual(commands[-2],'STOR sitemap.xml.uploading')
    self.assertEqual(commands[-1],'STOR '+deploy.MANIFEST+'.uploading')
 

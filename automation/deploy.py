@@ -138,10 +138,13 @@ def deploy(backend_only=False):
   except Exception:stopped.set();raise
   return count
  # At most two authenticated FTP sessions, with no idle coordinator connection.
- # Finish every asset before publishing HTML; the root sitemap commits last.
+ # Finish assets and backend dependencies before publishing HTML; the root sitemap commits last.
  workers=2
- for assets in [True,False]:
-  phase=sorted([item for item in changed if item[1]!='sitemap.xml' and item[1].startswith('_next/')==assets],key=lambda item:item[1])
+ def phase_number(destination):
+  if destination.startswith(('api/','lib/')) or destination in {'bootstrap.php','.htaccess'}:return 1
+  return 2 if PurePosixPath(destination).suffix in {'.html','.txt'} else 0
+ for number in range(3):
+  phase=sorted([item for item in changed if item[1]!='sitemap.xml' and phase_number(item[1])==number],key=lambda item:item[1])
   partitions=[phase[index::workers] for index in range(workers) if phase[index::workers]]
   if partitions:
    try:
