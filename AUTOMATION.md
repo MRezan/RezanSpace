@@ -154,3 +154,16 @@ locally instead of generating an entire article before noticing the problem.
 Final article language and evidence checks still apply. Progress policy version 3
 invalidates older partial drafts; completed validated originals, covers and
 translations remain reusable. Tests cover early rejection and language repair.
+
+
+### Resume interrupted hosting uploads
+
+The earlier live deployment exceeded its 65-minute job limit. Deployment now
+allows 180 minutes for a first full static export, while retaining the hosting-safe
+two-session transfer limit. Every 25 successfully renamed files are recorded in a
+separate progress journal. A retry reuses only matching file hashes tied to the
+same completed deployment manifest; a stale journal cannot override a later
+successful deployment. Assets still finish before HTML, and the root sitemap and
+completed deployment manifest still commit last. Host configuration and uploaded
+user media remain excluded. Tests simulate an interrupted 60-file transfer and
+verify that cached transfers resume without committing an incomplete deployment.

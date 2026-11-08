@@ -187,4 +187,53 @@ class DeploymentTests(unittest.TestCase):
    self.assertEqual(commands[-2],'STOR sitemap.xml.uploading')
    self.assertEqual(commands[-1],'STOR '+deploy.MANIFEST+'.uploading')
 
+
+class DeploymentResumeTests(unittest.TestCase):
+ def test_partial_transfers_resume_without_marking_a_failed_deployment_complete(self):
+  import deploy
+  import threading
+  server={};lock=threading.Lock();uploads=[];fail_at=[35];counter=[0]
+  class FTP:
+   def __init__(self,**kwargs):pass
+   def __enter__(self):return self
+   def __exit__(self,*args):pass
+   def connect(self,*args):pass
+   def login(self,*args):pass
+   def prot_p(self):pass
+   def cwd(self,*args):pass
+   def mkd(self,*args):pass
+   def rename(self,old,new):
+    with lock:server[new]=server.pop(old)
+   def retrbinary(self,command,append):
+    name=command.removeprefix('RETR ')
+    if name not in server:raise deploy.ftplib.error_perm('550 Missing')
+    append(server[name])
+   def storbinary(self,command,stream,**kwargs):
+    name=command.removeprefix('STOR ')
+    with lock:
+     if not name.startswith('.rezan-'):
+      counter[0]+=1
+      if fail_at[0] and counter[0]==fail_at[0]:raise OSError('connection lost')
+      uploads.append(name)
+     server[name]=stream.read()
+  with tempfile.TemporaryDirectory() as directory:
+   files=[]
+   for index in range(60):
+    path=Path(directory)/str(index);path.write_text('page '+str(index));files.append((path,'en/'+str(index)+'.html'))
+   values={'REZAN_FTP_HOST':'example.invalid','REZAN_FTP_USER':'test','REZAN_FTP_PASSWORD':'test','REZAN_FTP_DIRECTORY':'rezan.space/htdocs'}
+   with patch.object(deploy,'config',return_value=values),patch.object(deploy,'managed_files',side_effect=lambda backend_only:iter(files)),patch.object(deploy.ftplib,'FTP_TLS',FTP):
+    with self.assertRaises(OSError):deploy.deploy()
+    self.assertNotIn(deploy.MANIFEST,server)
+    progress=json.loads(server[deploy.PROGRESS]);self.assertGreaterEqual(len(progress['completed']),25)
+    uploads.clear();fail_at[0]=None;deploy.deploy()
+   self.assertLessEqual(len(uploads),35)
+   manifest=json.loads(server[deploy.MANIFEST]);self.assertEqual(len(manifest),60)
+   for source,destination in files:
+    self.assertEqual(server[destination],source.read_bytes());self.assertEqual(manifest[destination],deploy.file_digest(source))
+ def test_stale_journal_cannot_override_a_later_completed_manifest(self):
+  import deploy
+  from unittest.mock import Mock
+  ftp=Mock();ftp.retrbinary.side_effect=lambda command,append:append(json.dumps({'base':deploy.manifest_identity({'old':'hash'}),'completed':{'page.html':'stale'}}).encode())
+  self.assertEqual(deploy.progress_hashes(ftp,{'page.html':'newer'}),{})
+
 if __name__=='__main__':unittest.main()

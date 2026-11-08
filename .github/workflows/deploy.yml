@@ -10,7 +10,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-24.04
-    timeout-minutes: 65
+    timeout-minutes: 180
     env:
       REZAN_SITE_URL: https://rezan.space
       BLOG_WORK_DIR: work/blog
