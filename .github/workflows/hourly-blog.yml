@@ -44,11 +44,11 @@ jobs:
       resume_covers: ${{ steps.resume.outputs.covers || '[]' }}
       resume_languages: ${{ steps.resume.outputs.languages || '[]' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with: {persist-credentials: false}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with: {python-version: '3.12'}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with: {node-version: '22'}
       - run: pip install -r automation/requirements.txt
       - run: python -m unittest discover -s automation/tests -v
@@ -80,7 +80,7 @@ jobs:
         run: python automation/resume_batch.py
       - name: Reuse the source run's complete category evidence plan
         if: inputs.resume_run_id != ''
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: batch-plan
           path: work/blog
@@ -89,12 +89,12 @@ jobs:
       - name: Restore this batch's source plan when retrying
         if: github.run_attempt > 1
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with: {name: batch-plan, path: work/blog}
       - name: Require distinct, unpublished evidence for every category
         id: plan
         run: python -u automation/batch.py plan
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: batch-plan
           path: work/blog
@@ -110,15 +110,15 @@ jobs:
       matrix:
         topic: ${{ fromJSON(needs.prepare.outputs.topics) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with: {persist-credentials: false}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with: {python-version: '3.12'}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with: {name: batch-plan, path: work/blog}
       - name: Reuse the source run's validated original
         if: ${{ inputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_originals), matrix.topic) }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: category-original-${{ matrix.topic }}
           path: work/blog
@@ -127,13 +127,13 @@ jobs:
       - name: Restore completed original on retry
         if: github.run_attempt > 1
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: category-original-${{ matrix.topic }}
           path: work/blog
       - name: Restore partial validated sections from the source run
         if: ${{ inputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_progress), format('{0}-en', matrix.topic)) }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: category-progress-${{ matrix.topic }}-en
           path: work/blog
@@ -142,11 +142,11 @@ jobs:
       - name: Restore partial validated sections on retry
         if: github.run_attempt > 1
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: category-progress-${{ matrix.topic }}-en
           path: work/blog
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         if: ${{ !contains(fromJSON(needs.prepare.outputs.resume_originals), matrix.topic) }}
         with:
           path: .cache/huggingface/hub/models--unsloth--Qwen3-4B-Instruct-2507-GGUF
@@ -159,7 +159,7 @@ jobs:
           python -u automation/blog.py english --work "work/blog/topics/$TOPIC"
           mkdir -p "artifact/topics/$TOPIC"
           cp "work/blog/topics/$TOPIC/manifest.json" "work/blog/topics/$TOPIC/en.json" "artifact/topics/$TOPIC/"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: category-original-${{ matrix.topic }}
           path: artifact
@@ -175,7 +175,7 @@ jobs:
             mkdir -p "progress-artifact/topics/$TOPIC"
             cp "work/blog/topics/$TOPIC/$LANGUAGE.progress.json" "progress-artifact/topics/$TOPIC/"
           fi
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: category-progress-${{ matrix.topic }}-en
@@ -194,17 +194,17 @@ jobs:
       matrix:
         topic: ${{ fromJSON(needs.prepare.outputs.topics) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with: {persist-credentials: false}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with: {python-version: '3.12'}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: category-original-${{ matrix.topic }}
           path: work/blog
       - name: Reuse the source run's completed illustration
         if: ${{ inputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_covers), matrix.topic) }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: category-cover-${{ matrix.topic }}
           path: work/blog
@@ -213,7 +213,7 @@ jobs:
       - name: Restore completed illustration on retry
         if: github.run_attempt > 1
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: category-cover-${{ matrix.topic }}
           path: work/blog
@@ -228,7 +228,7 @@ jobs:
           fi
           mkdir -p "artifact/topics/$TOPIC"
           cp "work/blog/topics/$TOPIC/cover.webp" "artifact/topics/$TOPIC/"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: category-cover-${{ matrix.topic }}
           path: artifact
@@ -246,17 +246,17 @@ jobs:
         topic: ${{ fromJSON(needs.prepare.outputs.topics) }}
         language: [en, es, pt-BR, hi, id, ar, fr, de, ja, bn, vi, tr, ko, it, pl]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with: {persist-credentials: false}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with: {python-version: '3.12'}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: category-original-${{ matrix.topic }}
           path: work/blog
       - name: Reuse the source run's completed language
         if: ${{ inputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_languages), format('{0}-{1}', matrix.topic, matrix.language)) }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: category-language-${{ matrix.topic }}-${{ matrix.language }}
           path: work/blog
@@ -265,13 +265,13 @@ jobs:
       - name: Restore completed language on retry
         if: github.run_attempt > 1
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: category-language-${{ matrix.topic }}-${{ matrix.language }}
           path: work/blog
       - name: Restore partial validated sections from the source run
         if: ${{ inputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_progress), format('{0}-{1}', matrix.topic, matrix.language)) }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: category-progress-${{ matrix.topic }}-${{ matrix.language }}
           path: work/blog
@@ -280,11 +280,11 @@ jobs:
       - name: Restore partial validated sections on retry
         if: github.run_attempt > 1
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: category-progress-${{ matrix.topic }}-${{ matrix.language }}
           path: work/blog
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v5
         if: ${{ matrix.language != 'en' && !contains(fromJSON(needs.prepare.outputs.resume_languages), format('{0}-{1}', matrix.topic, matrix.language)) }}
         with:
           path: .cache/huggingface/hub/models--unsloth--Qwen3-4B-Instruct-2507-GGUF
@@ -301,7 +301,7 @@ jobs:
           fi
           mkdir -p "artifact/topics/$TOPIC"
           cp "work/blog/topics/$TOPIC/$LANGUAGE.json" "artifact/topics/$TOPIC/"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: category-language-${{ matrix.topic }}-${{ matrix.language }}
           path: artifact
@@ -317,7 +317,7 @@ jobs:
             mkdir -p "progress-artifact/topics/$TOPIC"
             cp "work/blog/topics/$TOPIC/$LANGUAGE.progress.json" "progress-artifact/topics/$TOPIC/"
           fi
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: category-progress-${{ matrix.topic }}-${{ matrix.language }}
@@ -335,15 +335,15 @@ jobs:
       cancel-in-progress: false
       queue: max
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with: {persist-credentials: false}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with: {python-version: '3.12'}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with: {node-version: '22'}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with: {name: batch-plan, path: work/blog}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           pattern: category-*
           merge-multiple: true
@@ -354,7 +354,7 @@ jobs:
           python automation/batch.py assemble
       - name: Save a validated preview
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: all-category-preview
           path: work/blog
@@ -368,7 +368,7 @@ jobs:
           node automation/delivery.mjs publish-batch
       - name: Build the latest approved website without discarding generated content
         if: ${{ github.event_name == 'schedule' || !inputs.dry_run }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: main
           clean: false

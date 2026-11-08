@@ -16,13 +16,13 @@ jobs:
       BLOG_WORK_DIR: work/blog
       NODE_EXTRA_CA_CERTS: ${{ github.workspace }}/automation/certs/google-wr1.pem
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
       - name: Wait for verified public HTTPS activation

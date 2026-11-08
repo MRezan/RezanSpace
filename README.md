@@ -169,3 +169,12 @@ Recovery of the source run should use current `main` and `resume_run_id=42431029
 to reuse the eight completed originals. Rerunning its old jobs uses the old commit.
 These safeguards address the observed failure; external service outages and
 unverifiable drafts still stop safely and retain recoverable work.
+
+
+GitHub Actions runtime maintenance (2026-11-08): all workflows now use native
+Node.js 24 actions: checkout v5, setup-node v5, setup-python v6, cache/restore v5,
+upload-artifact v6 and download-artifact v7. Their upstream action manifests were
+checked for `runs.using: node24`; upload/download names, paths and recovery inputs
+are preserved. This removes the Node 20 deprecation warning for new runs.
+Already-started runs retain their original workflow snapshot and may still show
+that warning; restarting their old jobs does not update the action versions.

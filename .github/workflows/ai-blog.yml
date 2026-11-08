@@ -37,15 +37,15 @@ jobs:
       resume_cover: ${{ steps.resume.outputs.cover || 'false' }}
       resume_languages: ${{ steps.resume.outputs.languages || '[]' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: automation/requirements*.txt
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
       - run: pip install -r automation/requirements.txt
@@ -68,7 +68,7 @@ jobs:
         run: python automation/resume.py
       - name: Reuse the completed English article and source packet
         if: inputs.resume_run_id != ''
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: blog-base
           path: work/blog
@@ -77,7 +77,7 @@ jobs:
       - name: Restore this run's generation checkpoint on a retry
         if: ${{ github.run_attempt > 1 && inputs.resume_run_id == '' }}
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: blog-base
           path: work/blog
@@ -97,7 +97,7 @@ jobs:
       - name: Select a new topic from primary publishers
         id: topic
         run: python automation/blog.py plan
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         if: steps.topic.outputs.has_topic == 'true'
         with:
           path: .cache/huggingface/hub/models--unsloth--Qwen3-4B-Instruct-2507-GGUF
@@ -109,7 +109,7 @@ jobs:
           python -u automation/blog.py english
       - name: Save source and English article checkpoint
         if: ${{ always() && steps.topic.outputs.has_topic == 'true' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: blog-base
           path: |
@@ -124,19 +124,19 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: blog-base
           path: work/blog
       - name: Reuse the source run's completed illustration
         if: ${{ inputs.resume_run_id != '' && needs.prepare.outputs.resume_cover == 'true' }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: blog-cover
           path: work/blog
@@ -149,7 +149,7 @@ jobs:
           pip install --no-cache-dir 'torch==2.7.1' --index-url https://download.pytorch.org/whl/cpu
           pip install --no-cache-dir -r automation/requirements-image.txt
           python -u automation/blog.py image
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: blog-cover
           path: work/blog/cover.webp
@@ -167,27 +167,27 @@ jobs:
       matrix:
         language: [en, es, pt-BR, hi, id, ar, fr, de, ja, bn, vi, tr, ko, it, pl]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: automation/requirements*.txt
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: blog-base
           path: work/blog
       - name: Reuse this language if it already finished in the source run
         if: ${{ inputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_languages), matrix.language) }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: blog-language-${{ matrix.language }}
           path: work/blog
           github-token: ${{ github.token }}
           run-id: ${{ inputs.resume_run_id }}
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v5
         if: ${{ !contains(fromJSON(needs.prepare.outputs.resume_languages), matrix.language) }}
         with:
           path: .cache/huggingface/hub/models--unsloth--Qwen3-4B-Instruct-2507-GGUF
@@ -201,7 +201,7 @@ jobs:
             pip install -r automation/requirements-text.txt
             python -u automation/blog.py translate --language "$BLOG_LANGUAGE"
           fi
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: blog-language-${{ matrix.language }}
           path: work/blog/${{ matrix.language }}.json
@@ -217,24 +217,24 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: blog-base
           path: work/blog
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: blog-cover
           path: work/blog
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           pattern: blog-language-*
           merge-multiple: true
@@ -245,7 +245,7 @@ jobs:
           python automation/blog.py assemble
       - name: Save validated generation preview
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: blog-generation-preview
           path: |
@@ -263,7 +263,7 @@ jobs:
           node automation/delivery.mjs publish
       - name: Build the latest approved website without discarding generated content
         if: ${{ github.event_name == 'schedule' || !inputs.dry_run }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: main
           clean: false

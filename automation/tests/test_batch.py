@@ -67,7 +67,7 @@ class BatchTests(unittest.TestCase):
  def test_publish_build_uses_current_main_without_deleting_generated_outputs(self):
   import yaml
   workflow=yaml.safe_load((ROOT.parent/'.github/workflows/hourly-blog.yml').read_text())
-  checkouts=[step for step in workflow['jobs']['publish']['steps'] if step.get('uses')=='actions/checkout@v4' and step.get('with',{}).get('ref')=='main']
+  checkouts=[step for step in workflow['jobs']['publish']['steps'] if step.get('uses')=='actions/checkout@v5' and step.get('with',{}).get('ref')=='main']
   self.assertEqual(len(checkouts),1);self.assertIs(checkouts[0]['with']['clean'],False)
  def test_invalid_prose_is_repaired_in_its_section_without_regenerating_valid_sections(self):
   import copy
@@ -91,7 +91,7 @@ class BatchTests(unittest.TestCase):
   workflow=yaml.safe_load((ROOT.parent/'.github/workflows/hourly-blog.yml').read_text())
   for name in ['originals','translations']:
    steps=workflow['jobs'][name]['steps']
-   upload=[step for step in steps if step.get('uses')=='actions/upload-artifact@v4' and step.get('with',{}).get('path')=='progress-artifact']
+   upload=[step for step in steps if step.get('uses')=='actions/upload-artifact@v6' and step.get('with',{}).get('path')=='progress-artifact']
    self.assertEqual(len(upload),1);self.assertEqual(upload[0]['if'],'always()')
    restore=[step for step in steps if step.get('name')=='Restore partial validated sections from the source run']
    self.assertEqual(len(restore),1);self.assertIn('resume_progress',restore[0]['if'])
