@@ -130,6 +130,13 @@ class BatchTests(unittest.TestCase):
   self.assertIn('sitemap',str(jobs['publish']['steps']).lower())
 
 class DeploymentTests(unittest.TestCase):
+ def test_superseding_deploy_cannot_enable_an_incompatible_max_queue(self):
+  import yaml
+  workflow=yaml.safe_load((Path(__file__).resolve().parents[2]/'.github/workflows/deploy.yml').read_text())
+  concurrency=workflow['concurrency']
+  if concurrency.get('cancel-in-progress') is not False:
+   self.assertNotEqual(concurrency.get('queue'),'max','GitHub rejects max queues with cancelling deploys')
+
  def test_existing_deployment_paths_skip_directory_network_checks(self):
   import deploy
   from unittest.mock import Mock

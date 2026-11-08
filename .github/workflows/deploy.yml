@@ -9,7 +9,6 @@ permissions:
 concurrency:
   group: rezan-live-deploy
   cancel-in-progress: ${{ github.event_name == 'push' }}
-  queue: max
 jobs:
   deploy:
     runs-on: ubuntu-24.04
