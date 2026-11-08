@@ -6,7 +6,7 @@ const posts=Array.from({length:8},(_,i)=>({id:i+1,slug:'story-'+i,post_slug:'sto
 const report=[];
 for (const width of (process.env.UI_REVIEW_WIDTHS?.split(',').map(Number)||[1440,1024,768,390,320])) {
  const context=await browser.newContext({viewport:{width,height:1000},reducedMotion:process.env.UI_REVIEW_MOTION==='on'?'no-preference':'reduce'});
- await context.addInitScript(()=>{localStorage.setItem('rezantech_session','local-ui-review');localStorage.setItem('rezantech_user',JSON.stringify({name:'Alex Morgan',role:'admin'}))});
+ await context.addInitScript(()=>{localStorage.setItem('rezan_measurement_consent','denied');localStorage.setItem('rezantech_session','local-ui-review');localStorage.setItem('rezantech_user',JSON.stringify({name:'Alex Morgan',role:'admin'}))});
  await context.route('https://rezan.space/api/**',async route=>{
   if(process.env.UI_REVIEW_DELAY_MS)await new Promise(resolve=>setTimeout(resolve,Number(process.env.UI_REVIEW_DELAY_MS)));
   const url=new URL(route.request().url());const user={name:'Alex Morgan',email:'alex@example.com',role:'admin',bio:'Writer, reader and curious mind.',created_at:'2026-01-01',interests:'Technology, Design',profession:'Designer',follower_count:24,following_count:8};let data={data:posts,pagination:{total:8,pages:1,has_more:false}};

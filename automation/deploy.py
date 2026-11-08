@@ -26,6 +26,9 @@ def managed_files(backend_only=False):
   yield from ((file,file.relative_to(out).as_posix()) for file in out.rglob('*') if file.is_file())
  for folder in ['api','lib']:
   yield from ((file,file.relative_to(ROOT/'backend').as_posix()) for file in (ROOT/'backend'/folder).rglob('*.php'))
+ # Composer notices and metadata accompany the PHP library source.
+ vendor=ROOT/'backend/lib/vendor'
+ if vendor.is_dir():yield from ((file,file.relative_to(ROOT/'backend').as_posix()) for file in vendor.rglob('*') if file.is_file() and file.suffix!='.php')
  yield ROOT/'backend/bootstrap.php','bootstrap.php'
  yield ROOT/'backend/.htaccess','.htaccess'
 

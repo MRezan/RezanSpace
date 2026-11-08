@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import {FirebaseMonitoring} from './firebase-monitoring';
 import {useUi} from './ui-language';
 import {localePath} from '../lib/i18n/locales';
 import {LanguageSwitcher} from './language-switcher';
@@ -24,7 +25,7 @@ function cachedViewer():Viewer{try{const value=localStorage.getItem('rezantech_u
 export function UserShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   if (pathname.startsWith('/admin')) return children;
-  return <><UserAppBar />{children}</>;
+  return <><UserAppBar />{children}<FirebaseMonitoring/></>;
 }
 
 export function UserAppBar() {

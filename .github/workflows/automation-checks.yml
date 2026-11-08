@@ -31,4 +31,5 @@ jobs:
           node --test tests/sitemap-limits.test.mjs
           php -l backend/api/categories.php
           php -l backend/api/posts.php
+          php tests/firebase-auth.php
           npm run test:i18n

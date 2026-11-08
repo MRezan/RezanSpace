@@ -217,3 +217,12 @@ validates its response and leaves loading after a bounded request timeout.
 Checks: `npm run test:articles`, `npm run test:i18n`, and
 `node automation/ui-review.mjs`. `UI_REVIEW_DELAY_MS=500` exercises real loading
 transitions using mocked network latency; `UI_REVIEW_MOTION=on` previews motion.
+
+
+### Firebase account integration (2026-11-08)
+
+Google sign-in verifies a Firebase Google ID token on PHP with the pinned `firebase/php-jwt` library before issuing a normal REZAN session. Existing local passwords and profiles remain in MySQL. Existing non-Gmail accounts require their current REZAN password once before Google is linked. Password recovery uses Firebase reset emails, a custom `/account/` action handler and one-time code verification on PHP; a successful reset changes the local password hash and revokes existing sessions. The Firebase project must enable Google and Email/Password, authorize `rezan.space`, and set the email action URL to `https://rezan.space/account/`. The sender domain is verified separately through Firebase SPF/DKIM DNS records. Never commit server configuration or service-account keys.
+
+Optional Firebase Analytics loads after a visitor opts in using Privacy preferences. Private routes and URL queries are excluded from manual page views; disable GA4 enhanced measurement for the web stream to prevent automatic history/form events. Analytics and Tag Manager are measurement tools, not ranking guarantees; only one GA4 integration is used. Crashlytics Web is public preview and explicitly not recommended for production by Google, so the isolated integration remains disabled unless `NEXT_PUBLIC_CRASHLYTICS_WEB_PREVIEW=true` is explicitly set on a preview build. No raw exceptions or account identifiers are submitted by that integration.
+
+Validation: `php tests/firebase-auth.php`, `npm run test:i18n`, and `node automation/auth-ui-review.mjs` (with the built `out/` served on localhost:3000). Firebase security tests cover signed/forged/expired tokens, project/provider checks, account linking, reset replay and session revocation. The PHP transaction tests use SQLite with a small MySQL syntax adapter; hosted MySQL still requires deployment smoke checks. Revert this feature commit to return to local-only authentication; keep the database backup and do not delete existing users or password hashes.

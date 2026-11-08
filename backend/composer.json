@@ -1,0 +1,8 @@
+{
+  "name": "rezan/website-backend",
+  "require": {
+    "php": ">=8.2",
+    "firebase/php-jwt": "^7.0"
+  },
+  "config": {"vendor-dir": "lib/vendor", "sort-packages": true, "allow-plugins": false}
+}
