@@ -1,6 +1,11 @@
 name: Deploy live multilingual site
 on:
   workflow_dispatch:
+    inputs:
+      verify_only:
+        description: 'Verify the existing live deployment without rebuilding or uploading'
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths: [.github/deploy-trigger]
@@ -21,6 +26,20 @@ jobs:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
+      - name: Choose deployment mode
+        id: mode
+        env:
+          VERIFY_ONLY_INPUT: ${{ inputs.verify_only || false }}
+          IS_PUSH: ${{ github.event_name == 'push' }}
+        run: |
+          python - <<'PYMODE'
+          import os
+          from pathlib import Path
+          marker=Path('.github/deploy-trigger').read_text().splitlines()[0].strip()
+          verify=os.environ['VERIFY_ONLY_INPUT']=='true' or (os.environ['IS_PUSH']=='true' and marker=='verify-only')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as output:output.write('verify_only='+str(verify).lower()+'\n')
+          print('Verifying the live release only.' if verify else 'Building and deploying the site.')
+          PYMODE
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
@@ -63,6 +82,7 @@ jobs:
             sleep 10
           done
       - name: Build production HTML from the live database snapshot
+        if: steps.mode.outputs.verify_only != 'true'
         env:
           REZAN_POSTS_FILE: work/blog/snapshot.json
           NEXT_PUBLIC_SITE_URL: https://rezan.space
@@ -71,6 +91,7 @@ jobs:
           npm ci
           npm run build -- --webpack
       - name: Upload managed files using verified FTPS
+        if: steps.mode.outputs.verify_only != 'true'
         env:
           REZAN_FTP_HOST: ${{ secrets.REZAN_FTP_HOST }}
           REZAN_FTP_USER: ${{ secrets.REZAN_FTP_USER }}

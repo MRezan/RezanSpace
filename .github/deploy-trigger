@@ -1,4 +1,2 @@
-Deploy Firebase accounts, hosted recovery, consented analytics and privacy controls.
-Validated source: 147353c
-Deploy trigger concurrency validated without a max queue.
-Upload backend dependencies before exposing new account pages.
+verify-only
+Validate the fully uploaded 68d4a39 release with browser metadata checks; do not rebuild or re-upload.

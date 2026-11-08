@@ -20,6 +20,7 @@ jobs:
           pip install -r automation/requirements.txt
           python -m unittest discover -s automation/tests -v
           node --check automation/delivery.mjs
+          node --test tests/live-verification.test.mjs
           php -l backend/lib/site-publish.php
           php -l backend/api/automation-media.php
           php -l backend/api/automation-health.php
