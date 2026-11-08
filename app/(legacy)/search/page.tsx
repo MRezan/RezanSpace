@@ -1,4 +1,5 @@
 'use client';
+import {LoadingPanel} from '../../brand-loader';
 
 import Link from 'next/link';
 import { Suspense, useEffect, useMemo, useState } from 'react';
@@ -13,7 +14,7 @@ type Mode = 'stories'|'people'|'topics';
 type Post = { id:number; slug:string; title:string; excerpt:string; image_url:string; author:string; published_at:string; category_name:string };
 type Person = { id:number; name:string; bio?:string; avatar_url?:string; post_count:number; follower_count:number };
 
-export default function Page(){return <Suspense fallback={<main className="feed-loading">Opening search…</main>}><Search/></Suspense>}
+export default function Page(){return <Suspense fallback={<main className="language-main"><LoadingPanel label="Opening search"/></main>}><Search/></Suspense>}
 
 function Search() {
   const params = useSearchParams();
@@ -70,7 +71,7 @@ function Search() {
         <button className={mode==='topics'?'active':''} onClick={()=>setMode('topics')}>Topics <span>{matchingTopics.length}</span></button>
       </nav>
 
-      {loading && mode==='stories' ? <p className="feed-loading">Searching the community…</p> : mode==='stories' ? stories.length ? stories.map(post=><article key={post.id}>
+      {loading && mode==='stories' ? <LoadingPanel label="Searching the community"/> : mode==='stories' ? stories.length ? stories.map(post=><article key={post.id}>
         <div className="m-author"><Link href={`/author/?name=${encodeURIComponent(post.author)}`}><span>{post.author[0]}</span></Link><Link href={`/author/?name=${encodeURIComponent(post.author)}`}><b>{post.author}</b></Link><small>{new Date(post.published_at).toLocaleDateString()}</small></div>
         <div className="search-story-result"><div><Link href={`/post/${post.slug}`}><h2>{post.title}</h2></Link><ExpandableText text={post.excerpt}/><small>{post.category_name}</small></div>{post.image_url&&<Link href={`/post/${post.slug}`}><img src={post.image_url} alt={post.title}/></Link>}</div>
       </article>) : <Empty label="stories"/> : mode==='people' ? people.length ? <div className="search-people">{people.map(person=><article key={person.id}><Link className="avatar" href={`/author/?name=${encodeURIComponent(person.name)}`}>{person.avatar_url?<img src={person.avatar_url} alt=""/>:person.name[0]}</Link><div className="person-details"><Link href={`/author/?name=${encodeURIComponent(person.name)}`}><b>{person.name}</b></Link>{person.bio&&<p>{person.bio}</p>}<small><span>{person.post_count} {person.post_count===1?'story':'stories'}</span><i/> <span>{person.follower_count} {person.follower_count===1?'follower':'followers'}</span></small></div><FollowButton author={person.name} compact/></article>)}</div> : <Empty label="people"/> : matchingTopics.length ? <div className="search-topics">{matchingTopics.map(topic=><button key={topic} onClick={()=>{setQuery(topic);setMode('stories')}}><i/><div><b>{topic}</b><small>{posts.filter(post=>post.category_name===topic).length} stories</small></div><span>→</span></button>)}</div> : <Empty label="topics"/>}

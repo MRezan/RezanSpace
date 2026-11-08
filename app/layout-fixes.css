@@ -8,7 +8,12 @@
 .social-left .side-topic-list {min-height:0;flex:1;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
 .social-left .side-topic {flex-shrink:0}
 .social-left .side-topic span {min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.4}
-.social-left .sidebar-more {flex-shrink:0;justify-content:center;min-height:42px;margin-top:8px;border-top:1px solid #e1e6ef;border-radius:0;color:#5965f5;font-size:12px}
+.social-left #sidebar-topics {display:flex;flex-direction:column;gap:2px;flex-shrink:0}
+.social-left .sidebar-more {display:flex;align-items:center;justify-content:flex-start;gap:12px;flex-shrink:0;min-height:42px;margin:5px 0 0;padding:8px 10px;border:1px solid transparent;border-radius:11px;background:transparent;color:#5965f5;font:inherit;font-weight:650;font-size:12px;line-height:1.4;text-align:start;transition:background .18s ease,border-color .18s ease}
+.social-left .sidebar-more:hover {background:#fff;border-color:#e5e9f2}
+.social-left .sidebar-more-icon {display:grid;place-items:center;flex:0 0 25px;width:25px;height:25px;border-radius:8px;background:#e9edff;color:#5965f5}
+.social-left .sidebar-more-icon::before {content:"";width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:translateY(-2px) rotate(45deg);transition:transform .18s ease}
+.social-left .sidebar-more[aria-expanded=true] .sidebar-more-icon::before {transform:translateY(2px) rotate(225deg)}
 /* Every sidebar topic has equal hierarchy, including former child categories. */
 .social-left .side-topic {padding-inline-start:10px}
 .cms .table-head {flex-wrap:wrap;gap:18px}

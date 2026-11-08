@@ -6,7 +6,7 @@
     "translation_key": "solar",
     "title": "Solar energy explained",
     "excerpt": "How sunlight becomes electricity.",
-    "content": "<p>Solar panels convert sunlight into electricity.</p>",
+    "content": "<p>Solar panels convert sunlight into electricity.</p><h2>How solar panels work</h2><p>Solar cells convert light into an electrical current. Output depends on sunlight, the installation and the equipment used.</p><h2>Practical limitations</h2><p>Weather and shade affect output. A site assessment is needed to understand the limitations of a particular installation.</p>",
     "author": "Test Writer",
     "category_name": "Science",
     "published_at": "2026-10-01T00:00:00Z",
@@ -47,6 +47,39 @@
     "content": "<p>Este texto no es una traducción.</p>",
     "author": "Test Writer",
     "category_name": "Culture",
+    "published_at": "2026-10-03T00:00:00Z"
+  },
+  {
+    "id": 5,
+    "slug": "solar-storage-en",
+    "language": "en",
+    "title": "Understanding solar energy storage",
+    "excerpt": "How batteries fit into a solar energy system.",
+    "content": "<p>Batteries store energy for later use. Their capacity and the energy demand determine how long they can supply power.</p>",
+    "author": "Test Writer",
+    "category_name": "Science",
+    "published_at": "2026-10-03T00:00:00Z"
+  },
+  {
+    "id": 6,
+    "slug": "solar-storage-bn",
+    "language": "bn",
+    "title": "সৌরশক্তি সংরক্ষণের পরিচয়",
+    "excerpt": "সৌরবিদ্যুৎ ব্যবস্থায় ব্যাটারির ভূমিকা।",
+    "content": "<p>ব্যাটারিতে পরে ব্যবহারের জন্য বিদ্যুৎ সংরক্ষণ করা যায়।</p>",
+    "author": "Test Writer",
+    "category_name": "Science",
+    "published_at": "2026-10-03T00:00:00Z"
+  },
+  {
+    "id": 7,
+    "slug": "solar-storage-ar",
+    "language": "ar",
+    "title": "فهم تخزين الطاقة الشمسية",
+    "excerpt": "دور البطاريات في أنظمة الطاقة الشمسية.",
+    "content": "<p>تخزن البطاريات الطاقة لاستخدامها لاحقًا.</p>",
+    "author": "Test Writer",
+    "category_name": "Science",
     "published_at": "2026-10-03T00:00:00Z"
   }
 ]

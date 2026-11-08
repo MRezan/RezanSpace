@@ -1,4 +1,5 @@
 'use client';
+import {BrandLoader} from '../../brand-loader';
 
 import Link from 'next/link';
 import { ChangeEvent, FormEvent, useCallback, useEffect, useRef, useState } from 'react';
@@ -98,7 +99,7 @@ export default function Profile() {
   async function editStory(event:FormEvent<HTMLFormElement>){event.preventDefault();if(!editingPost||savePhase==='saving')return;setSavePhase('saving');const token=localStorage.getItem('rezantech_session');try{const response=await fetch(`${API}/api/user-posts.php`,{method:'PUT',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({id:editingPost.id,...Object.fromEntries(new FormData(event.currentTarget))})});const data=await response.json();if(!response.ok){setNotice(data.error||'Could not update your post.');setSavePhase('error');return}setSavePhase('success');setNotice(data.message);await new Promise(resolve=>window.setTimeout(resolve,850));await load();setEditingPost(null);setSavePhase('idle');setView('home')}catch{setNotice('Could not update your post. Check your connection and try again.');setSavePhase('error')}}
   async function deleteStory(post:UserPost){if(!await confirmAction({title:'Delete this story?',message:`“${post.title}” will be permanently removed. This action cannot be undone.`,confirmLabel:'Delete story',tone:'danger'}))return;setDeletingPost(post.id);const token=localStorage.getItem('rezantech_session');try{const response=await fetch(`${API}/api/user-posts.php?id=${post.id}`,{method:'DELETE',headers:{Authorization:`Bearer ${token}`}});const data=await response.json();setNotice(data.message||data.error);if(response.ok)setPosts(current=>current.filter(item=>item.id!==post.id))}finally{setDeletingPost(null)}}
 
-  if (loading) return <main className="profile-loading"><i/><p>Preparing your profile…</p></main>;
+  if (loading) return <main className="profile-loading"><BrandLoader label="Preparing your profile"/></main>;
   if (!user) return null;
 
   const savedStories = allStories.filter(post => saved.includes(post.slug));

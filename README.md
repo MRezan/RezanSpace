@@ -188,3 +188,32 @@ Inference models remain on separate runners, completed artifacts remain reusable
 and failed tasks do not cancel unrelated work. Already-running workflows keep
 their saved dependency graph; checkpoint recovery on current main applies this
 scheduling change without regenerating completed originals.
+
+
+## Article landing pages and shared loading — 2026-11-08
+
+Published localized and legacy post URLs now use one article reader with the
+Home feed's blue palette, card surfaces and responsive typography. Related stories
+are real cards, ranked within the authored language and linked to canonical
+localized article URLs. Article headers expose the author, actual publication and
+modification dates, reading estimate and available translations. Section anchors,
+mobile section navigation and topic links help readers continue exploring.
+
+SEO output includes one headline, a bounded description, canonical/real hreflang
+alternates, article social metadata and connected WebPage/BlogPosting/breadcrumb
+structured data. Older editorial sample links now point to real exported routes.
+This improves crawlability and page presentation; it does not guarantee rankings.
+
+Mobile actions use one Like / Comment / Share row, with Save beside the author.
+The sidebar's See more/See less control follows the last topic inside the scroll
+area. Home layout and existing hover animations are preserved.
+
+A shared REZAN orbit animation now covers feed, story, discovery, search, library,
+profile, author, discussion and administrative wait states. Story placeholders
+match the final reader geometry. Motion is disabled for reduced-motion users;
+there is no artificial loading delay. The API reader uses the same presentation,
+validates its response and leaves loading after a bounded request timeout.
+
+Checks: `npm run test:articles`, `npm run test:i18n`, and
+`node automation/ui-review.mjs`. `UI_REVIEW_DELAY_MS=500` exercises real loading
+transitions using mocked network latency; `UI_REVIEW_MOTION=on` previews motion.

@@ -1,4 +1,5 @@
 'use client';
+import {LoadingPanel} from '../../brand-loader';
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
@@ -45,7 +46,7 @@ export default function Library() {
     return () => window.removeEventListener('rezantech:bookmark', update);
   }, []);
 
-  if (loading) return <main className="library-page"><div className="library-loading"><i/><p>Opening your library…</p></div></main>;
+  if (loading) return <main className="library-page"><LoadingPanel label="Loading your library"/></main>;
   return <main className="library-page">
     <header className="library-heading"><div><span>YOUR READING SPACE</span><h1>Saved stories</h1><p>Keep stories from every topic that you want to revisit in one organized place.</p></div><Link href="/">Explore feed</Link></header>
     {error && <div className="library-error">{error}<button onClick={load}>Try again</button></div>}

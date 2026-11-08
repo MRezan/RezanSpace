@@ -1,4 +1,5 @@
 'use client';
+import {BrandLoader} from '../../brand-loader';
 
 import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
@@ -93,7 +94,7 @@ export function Comments({ slug }: { slug:string }) {
     {message && <p className="comment-message" role="status">{message}<button onClick={() => setMessage('')}>×</button></p>}
 
     <div className="comment-list">
-      {loading ? <div className="comments-loading"><i/><span>Loading discussion…</span></div> : shown.length ? shown.map(comment => <article key={comment.id}>
+      {loading ? <div className="comments-loading"><BrandLoader label="Loading discussion"/></div> : shown.length ? shown.map(comment => <article key={comment.id}>
         <Link className="comment-avatar" href={`/author/?name=${encodeURIComponent(comment.name)}`}>{comment.name[0].toUpperCase()}</Link>
         <div className="comment-bubble">
           <header><div><Link href={`/author/?name=${encodeURIComponent(comment.name)}`}><b>{comment.name}</b></Link>{comment.bio && <span>{comment.bio}</span>}<small>{new Date(comment.created_at).toLocaleString()}</small></div>{comment.can_delete && <button onClick={() => remove(comment.id)} disabled={deleting === comment.id}>{deleting === comment.id ? 'Deleting…' : 'Delete'}</button>}</header>
@@ -101,6 +102,6 @@ export function Comments({ slug }: { slug:string }) {
         </div>
       </article>) : <div className="no-comments"><span><i className="comment-icon"/></span><b>Start the conversation.</b><p>Be the first to leave a thoughtful response to this story.</p></div>}
     </div>
-    {hasMore&&<button className="comments-load-more" disabled={loadingMore} onClick={()=>load(page+1,true)}>{loadingMore?'Loading more…':'Load more comments'}</button>}
+    {hasMore&&<button className="comments-load-more" disabled={loadingMore} onClick={()=>load(page+1,true)}>{loadingMore?<BrandLoader compact label="Loading more comments"/>:'Load more comments'}</button>}
   </section>;
 }

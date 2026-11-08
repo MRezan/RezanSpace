@@ -1,4 +1,5 @@
 'use client';
+import {BrandLoader} from '../../brand-loader';
 
 import Link from 'next/link';
 import { Suspense, useEffect, useState } from 'react';
@@ -11,7 +12,7 @@ const API = process.env.NEXT_PUBLIC_API_URL || 'https://rezan.space';
 type Post = { id:number; slug:string; title:string; excerpt:string; image_url:string; author:string; published_at:string; category_name:string; like_count:number; comment_count:number };
 type Person = { name:string; bio:string; website:string; avatar_url:string; profession:string; address:string; interests:string; created_at:string|null; post_count:number; follower_count:number };
 
-export default function Page(){return <Suspense fallback={<main className="author-loading">Loading writer…</main>}><AuthorProfile/></Suspense>}
+export default function Page(){return <Suspense fallback={<main className="author-loading"><BrandLoader label="Loading writer"/></main>}><AuthorProfile/></Suspense>}
 
 function AuthorProfile() {
   const name = useSearchParams().get('name') || '';
@@ -31,7 +32,7 @@ function AuthorProfile() {
   }, [name,router]);
 
   if (error) return <main className="author-loading"><h1>Writer not found</h1><p>{error}</p><Link href="/">Return home</Link></main>;
-  if (!person) return <main className="author-loading">Loading writer…</main>;
+  if (!person) return <main className="author-loading"><BrandLoader label="Loading writer"/></main>;
 
   return <main className="author-page">
     <section className="author-hero"><div className="author-cover"><i/><i/></div><div className="author-identity"><span>{person.avatar_url?<img src={person.avatar_url} alt={`${person.name} profile picture`}/>:person.name[0]}</span><div><small>{person.profession||'REZAN CONTRIBUTOR'}</small><h1>{person.name}</h1><p>{person.bio || 'Community contributor sharing useful ideas with REZAN readers.'}</p>{person.address&&<em className="author-location">⌖ {person.address}</em>}<footer><b>{person.post_count}</b> stories <b>{person.follower_count}</b> followers {person.website && <a href={person.website} target="_blank" rel="noreferrer">↗ Website</a>}</footer></div><FollowButton author={person.name} initial={following}/></div></section>

@@ -1,7 +1,9 @@
 import {cache} from 'react';
 import {readFile} from 'node:fs/promises';
-import {isLocale, type Locale, localePath,siteUrl} from './locales';
-export type LocalizedPost = {id:number;slug:string;title:string;excerpt:string;content:string;author:string;category_name:string;image_url?:string;image_alt?:string;published_at:string;updated_at?:string;language:Locale;translation_key?:string|null};
+import {isLocale,siteUrl} from './locales';
+import type {LocalizedPost} from './post-links';
+export {postPath,translationsFor,jsonLd} from './post-links';
+export type {LocalizedPost} from './post-links';
 const api=process.env.REZAN_BUILD_API_URL || process.env.NEXT_PUBLIC_API_URL || 'https://rezan.space';
 export const getPublishedPosts=cache(async():Promise<LocalizedPost[]>=>{
   // A build snapshot supports hosts that block server-side API requests. Never silently ship an empty blog.
@@ -19,6 +21,3 @@ export const getPublishedPosts=cache(async():Promise<LocalizedPost[]>=>{
   for(const post of result){if(slugs.has(post.slug))throw new Error(`Duplicate published slug: ${post.slug}`);slugs.add(post.slug);if(post.translation_key){const key=`${post.translation_key}:${post.language}`;if(groups.has(key))throw new Error(`Duplicate translation language: ${key}`);groups.add(key);}}
   return result;
 });
-export const postPath=(post:Pick<LocalizedPost,'language'|'slug'>)=>localePath(post.language,`post/${encodeURIComponent(post.slug)}`);
-export function translationsFor(post:LocalizedPost, posts:LocalizedPost[]){return post.translation_key ? posts.filter(item=>item.translation_key===post.translation_key) : [post];}
-export function jsonLd(value:unknown){return JSON.stringify(value).replace(/</g,'\\u003c');}

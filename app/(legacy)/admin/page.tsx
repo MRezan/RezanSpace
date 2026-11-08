@@ -1,4 +1,5 @@
 'use client';
+import {BrandLoader} from '../../brand-loader';
 import {LanguageField} from '../../language-field';
 import Link from 'next/link';
 import './admin.css';
@@ -32,7 +33,7 @@ export default function Admin(){
   <button className="cms-menu-scrim" aria-label="Close navigation" onClick={()=>setMenuOpen(false)}/>
   <aside className="cms-side"><div className="cms-side-head"><Link className="cms-brand" href="/"><span><img src="/favicon.svg" alt=""/></span><b>REZAN</b></Link><button aria-label="Close navigation" onClick={()=>setMenuOpen(false)}>×</button></div><p className="workspace">EDITORIAL WORKSPACE</p><nav>{nav.map(([id,label,icon])=><button key={id} className={tab===id?'active':''} onClick={()=>{setTab(id);setMenuOpen(false)}}><i>{icon}</i>{label}{id==='posts'&&<small>{posts.length}</small>}</button>)}</nav><div className="side-bottom"><div className="editor-user"><span>{dash?.admin.name.split(' ').map(part=>part[0]).join('').slice(0,2).toUpperCase()}</span><div><b>{dash?.admin.name}</b><small>{dash?.admin.role==='owner'?'Owner administrator':'Staff administrator'}</small></div></div><Link href="/">View publication ↗</Link></div></aside>
   <section className="cms-main"><header className="cms-top"><div><button className="mobile-menu" aria-label="Open navigation" onClick={()=>setMenuOpen(true)}>☰</button><span>{nav.find(n=>n[0]===tab)?.[1]}</span></div><div><span className={`admin-level ${dash?.admin.role||'editor'}`}>{dash?.admin.role==='owner'?'Owner':'Staff admin'}</span><span className="api-live"><i/> Secure API connected</span><button className="quick" onClick={()=>setTab('new')}>＋ New article</button></div></header>
-  <div className="cms-content">{notice&&<div className="cms-notice" onClick={()=>setNotice('')}>{notice}<button>×</button></div>}{loading?<div className="cms-loading">Loading newsroom…</div>:<>
+  <div className="cms-content">{notice&&<div className="cms-notice" onClick={()=>setNotice('')}>{notice}<button>×</button></div>}{loading?<div className="cms-loading"><BrandLoader label="Loading newsroom"/></div>:<>
    {tab==='overview'&&dash&&<Overview dash={dash} posts={posts} go={setTab}/>} 
    {tab==='posts'&&<Posts posts={posts} action={action} go={setTab} page={storyPage} pages={storyPages} total={storyTotal} setPage={setStoryPage}/>} 
    {tab==='new'&&<NewPost cats={cats} submit={createPost}/>} 

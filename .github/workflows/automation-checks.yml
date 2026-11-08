@@ -27,6 +27,7 @@ jobs:
       - run: |
           npm ci
           npm run test:categories
+          npm run test:articles
           node --test tests/sitemap-limits.test.mjs
           php -l backend/api/categories.php
           php -l backend/api/posts.php

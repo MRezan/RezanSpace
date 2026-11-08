@@ -1,4 +1,5 @@
 'use client';
+import {LoadingPanel} from '../../brand-loader';
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -41,7 +42,7 @@ export default function Discover() {
 
     <nav className="discover-topics" aria-label="Filter by topic">{topics.map(item => <button key={item} className={topic === item ? 'active' : ''} onClick={() => {setTopic(item);setPage(1)}}>{item==='All'?tr(item):categoryOptionLabel(item,locale)}</button>)}</nav>
 
-    {loading ? <div className="discover-loading"><i/><p>Finding stories for you…</p></div> : <div className="discover-layout">
+    {loading ? <LoadingPanel label="Finding stories for you"/> : <div className="discover-layout">
       <section className="discover-main">
         {featured && <article className="discover-featured"><Link href={`/post/${featured.slug}`} className="featured-image">{featured.image_url ? <img src={featured.image_url} alt={featured.title}/> : <span>{featured.title[0]}</span>}<em>Editor’s pick</em></Link><div><small>{featured.category_name}</small><Link href={`/post/${featured.slug}`}><h2>{featured.title}</h2></Link><ExpandableText text={featured.excerpt}/><footer><span><Link href={`/author/?name=${encodeURIComponent(featured.author)}`}>{featured.author}</Link> · {new Date(featured.published_at).toLocaleDateString()}</span><SaveButton slug={featured.slug}/></footer></div></article>}
         <div className="discover-heading"><div><small>CURATED FOR YOU</small><h2>Explore stories</h2></div><span>{total} results</span></div>
