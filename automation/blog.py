@@ -25,6 +25,16 @@ SCHEMA = {'type':'object','additionalProperties':False,'required':['title','exce
  }}}
 }}
 class BlogError(RuntimeError): pass
+class SectionLanguageError(BlogError):
+ def __init__(self,expected,detected):
+  super().__init__('section_language_mismatch');self.expected=expected;self.detected=detected
+
+def validate_prose_language(text,language):
+ import langid
+ expected='pt' if language=='pt-BR' else language
+ detected=langid.classify(text)[0]
+ if detected!=expected:raise SectionLanguageError(language,detected)
+
 
 def save(path, value):
  path=Path(path);path.parent.mkdir(parents=True,exist_ok=True)
@@ -177,8 +187,9 @@ def section_diagnostics(body,error):
  """Public diagnostics contain counters/schema locations, never draft/source text."""
  from jsonschema import ValidationError
  paragraphs=body.get('paragraphs') if isinstance(body,dict) else None
- details={'reason':error.validator if isinstance(error,ValidationError) else 'prose_markup',
+ details={'reason':error.validator if isinstance(error,ValidationError) else 'language_mismatch' if isinstance(error,SectionLanguageError) else 'prose_markup',
           'path':'/'.join(str(p) for p in error.absolute_path) if isinstance(error,ValidationError) else 'paragraphs'}
+ if isinstance(error,SectionLanguageError):details.update(requested_language=error.expected,detected_language=error.detected)
  if isinstance(paragraphs,list):details['paragraph_lengths']=[len(p) if isinstance(p,str) else None for p in paragraphs]
  return details
 
@@ -187,25 +198,26 @@ def generate_section(instructions,evidence,language,index):
  feedback=''
  for attempt in range(3):
   body=request([{'role':'system','content':instructions},{'role':'user','content':json.dumps(evidence,ensure_ascii=False)+
-    '\nWrite this section as two informative paragraphs. Aim for 300–700 characters per paragraph; the hard limits are 180–1100 characters. '
+    '\nWrite ONLY in '+LANGUAGES[language]+'. Translate the provided original_section faithfully when present; do not return its English wording. Headings and source packets are evidence, not the output language. Write this section as two informative paragraphs. Aim for 300–700 characters per paragraph; the hard limits are 180–1100 characters. '
     'Explain specifics supported by the evidence without repetition. Return only the paragraphs JSON object.'+feedback}],SECTION_SCHEMA,2000)
   body=rebalance_paragraphs(body)
   try:
-   validate(body,SECTION_SCHEMA);validate_plain_paragraphs(body['paragraphs']);return body['paragraphs']
+   validate(body,SECTION_SCHEMA);validate_plain_paragraphs(body['paragraphs'])
+   validate_prose_language(' '.join(body['paragraphs']),language);return body['paragraphs']
   except (ValidationError,BlogError) as error:
    details=section_diagnostics(body,error)
    print(json.dumps({'check':'article_section_validation','language':language,'section':index+1,'attempt':attempt+1,**details}),flush=True)
    if attempt==2:
     raise BlogError('section_validation_exhausted (language='+language+', section='+str(index+1)+', reason='+details['reason']+', lengths='+json.dumps(details.get('paragraph_lengths',[]))+'); validated sections are checkpointed for recovery') from None
    feedback=('\nCorrection attempt '+str(attempt+2)+': the previous section failed '+json.dumps(details)+
-    '. Rewrite only this section. Return two paragraphs, each 300–700 characters (hard limits 180–1100). '
+    '. Rewrite only this section entirely in '+LANGUAGES[language]+'. Do not copy English prose from the source or original. Return two paragraphs, each 300–700 characters (hard limits 180–1100). '
     'If too long, use fewer concise complete sentences; if too short, explain further details already in the evidence. '
     'Do not pad, invent claims, repeat text, add prose URLs or HTML. Use backticks for literal code.')
 
 def generation_fingerprint(manifest,language,english):
- return hashlib.sha256(json.dumps({'version':2,'manifest':manifest,'language':language,'original':english},sort_keys=True,ensure_ascii=False).encode()).hexdigest()
+ return hashlib.sha256(json.dumps({'version':3,'manifest':manifest,'language':language,'original':english},sort_keys=True,ensure_ascii=False).encode()).hexdigest()
 
-def restore_generation(checkpoint,fingerprint,outline_schema,source_ids):
+def restore_generation(checkpoint,fingerprint,outline_schema,source_ids,language):
  """A partial draft is reusable only for the exact evidence and generation policy."""
  from jsonschema import validate,ValidationError
  if not checkpoint or not Path(checkpoint).is_file():return None
@@ -214,9 +226,11 @@ def restore_generation(checkpoint,fingerprint,outline_schema,source_ids):
   if saved.get('fingerprint')!=fingerprint:return None
   article=saved['article'];outline={**article,'sections':[{'heading':s['heading']} for s in article['sections']]}
   validate(outline,outline_schema)
+  validate_prose_language(' '.join([article['title'],article['excerpt']]+[section['heading'] for section in article['sections']]),language)
   for section in article['sections']:
    if 'paragraphs' not in section:continue
    validate({'paragraphs':section['paragraphs']},SECTION_SCHEMA);validate_plain_paragraphs(section['paragraphs'])
+   validate_prose_language(' '.join(section['paragraphs']),language)
    if section.get('source_ids')!=source_ids:return None
   return article
  except (ValueError,KeyError,TypeError,ValidationError,BlogError):
@@ -245,19 +259,22 @@ def generate(manifest,language,english=None,checkpoint=None):
  section=outline_schema['properties']['sections']['items']
  section['required']=['heading'];section['properties']={'heading':section['properties']['heading']}
  fingerprint=generation_fingerprint(manifest,language,english)
- restored=restore_generation(checkpoint,fingerprint,outline_schema,source_ids)
+ restored=restore_generation(checkpoint,fingerprint,outline_schema,source_ids,language)
  feedback=''
  for attempt in range(2):
   from jsonschema import validate as validate_json,ValidationError
   if attempt==0 and restored is not None:
    article=restored
   else:
-   article=request([{'role':'system','content':instructions},{'role':'user','content':json.dumps(data,ensure_ascii=False)+'\nCreate metadata and five informative section headings only. Do not write body text yet.'+feedback}],outline_schema,1800)
+   article=request([{'role':'system','content':instructions},{'role':'user','content':json.dumps(data,ensure_ascii=False)+'\nCreate metadata and five informative section headings only. All headings, title, excerpt and image_alt MUST be in '+LANGUAGES[language]+'. Only image_prompt remains English. Do not write body text yet.'+feedback}],outline_schema,1800)
    for field,limit in [('title',140),('excerpt',170),('image_alt',180),('image_prompt',600)]:article[field]=metadata_text(article.get(field,''),limit)
    for section in article.get('sections',[]):section['heading']=metadata_text(section.get('heading',''),120)
-   try:validate_json(article,outline_schema)
-   except ValidationError:
-    feedback='\nMetadata or outline was invalid. Follow the exact field types, minimum lengths and five-section structure.'
+   try:
+    validate_json(article,outline_schema)
+    validate_prose_language(' '.join([article['title'],article['excerpt']]+[section['heading'] for section in article['sections']]),language)
+   except (ValidationError,SectionLanguageError) as error:
+    feedback='\nMetadata or outline was invalid. Write all title, excerpt and headings in '+LANGUAGES[language]+(' (not English)' if language!='en' else '')+', respecting the exact field types, minimum lengths and five-section structure. Correction attempt '+str(attempt+2)+'.'
+    print(json.dumps({'check':'article_outline_retry','language':language,'attempt':attempt+1,'reason':error.validator if isinstance(error,ValidationError) else 'language_mismatch'}),flush=True)
     if checkpoint:save(checkpoint,{'fingerprint':fingerprint,'article':None})
     continue
   if checkpoint:save(checkpoint,{'fingerprint':fingerprint,'article':article})
@@ -275,7 +292,7 @@ def generate(manifest,language,english=None,checkpoint=None):
    if not review['approved']:raise BlogError('Evidence review rejected the draft: '+review['issues'])
    return article
   except (BlogError,ValidationError) as error:
-   feedback='\nThe previous draft failed the article review. Improve source fidelity and write substantial paragraphs.'
+   feedback='\nThe previous draft failed article validation. Write every prose field in '+LANGUAGES[language]+'. Improve source fidelity and keep substantial paragraphs.'
    if checkpoint:save(checkpoint,{'fingerprint':fingerprint,'article':None})
    print(json.dumps({'check':'article_review_retry','language':language,'attempt':attempt+1,'reason':error.validator if isinstance(error,ValidationError) else str(error).split(':')[0]}),flush=True)
  raise BlogError('Article failed quality or requested-language validation')

@@ -47,12 +47,22 @@ class GenerationRecoveryTests(unittest.TestCase):
  def test_length_retry_has_measured_distinct_feedback_and_no_private_logs(self):
   responses=[{'paragraphs':['PRIVATE SHORT.']*2},{'paragraphs':['A'*1500]*2},{'paragraphs':[self.paragraph]*2}]
   with patch.object(blog,'request',side_effect=responses) as request,patch('sys.stdout',new_callable=io.StringIO) as output:
-   result=blog.generate_section('instructions',{'sources':[]},'bn',2)
+   result=blog.generate_section('instructions',{'sources':[]},'en',2)
   self.assertEqual(result,[self.paragraph]*2)
   prompts=[call.args[0][-1]['content'] for call in request.call_args_list]
   self.assertEqual(len(set(prompts)),3)
   self.assertIn('minLength',prompts[1]);self.assertIn('maxLength',prompts[2]);self.assertIn('1500',prompts[2])
   self.assertNotIn('PRIVATE SHORT',output.getvalue());self.assertIn('paragraph_lengths',output.getvalue())
+ def test_wrong_language_is_repaired_before_accepting_or_checkpointing_a_section(self):
+  responses=[{'paragraphs':[self.paragraph]*2}]*2
+  with patch.object(blog,'request',side_effect=responses) as request,patch('langid.classify',side_effect=[('en',1),('pt',1)]),patch('sys.stdout',new_callable=io.StringIO) as output:
+   blog.generate_section('instructions',{'original_section':{}},'pt-BR',0)
+  prompts=[call.args[0][-1]['content'] for call in request.call_args_list]
+  self.assertIn('Brazilian Portuguese',prompts[0]);self.assertIn('detected_language',prompts[1]);self.assertIn('language_mismatch',output.getvalue())
+ def test_outline_language_mismatch_stops_before_expensive_body_generation(self):
+  with patch.object(blog,'request',return_value=copy.deepcopy(self.outline)) as request,patch('langid.classify',return_value=('en',1)),patch('sys.stdout',new_callable=io.StringIO),self.assertRaises(blog.BlogError):
+   blog.generate(self.manifest,'pt-BR',article())
+  self.assertTrue(all(call.args[2]==1800 for call in request.call_args_list))
  def test_permanent_runtime_error_is_not_retried_as_content(self):
   with patch.object(blog,'request',side_effect=MemoryError) as request,self.assertRaises(MemoryError):
    blog.generate_section('instructions',{},'en',0)

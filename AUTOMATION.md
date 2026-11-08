@@ -141,3 +141,16 @@ prose formatting/links are repaired at the section level before completing a dra
 Long generation runs build the **latest main-branch website** at the deployment
 stage (`clean: false` preserves the generated batch). This prevents an earlier
 content run from restoring an obsolete UI after a newer UI fix was deployed.
+
+
+### Translation language checks (2026-11-08)
+
+The recovery run completed all 16 originals and covers, then exposed a separate
+failure: some translations copied English despite requesting another language.
+The generator now repeats the target language in the final outline/section
+instruction, detects the outline and each section before checkpointing, and gives
+retries the detected/expected language codes. Wrong-language sections are repaired
+locally instead of generating an entire article before noticing the problem.
+Final article language and evidence checks still apply. Progress policy version 3
+invalidates older partial drafts; completed validated originals, covers and
+translations remain reusable. Tests cover early rejection and language repair.
