@@ -167,3 +167,7 @@ successful deployment. Assets still finish before HTML, and the root sitemap and
 completed deployment manifest still commit last. Host configuration and uploaded
 user media remain excluded. Tests simulate an interrupted 60-file transfer and
 verify that cached transfers resume without committing an incomplete deployment.
+
+### Deployment speed (2026-11-08)
+
+The live deployment timing showed the production build finishing in 81 seconds; FTPS transfer was the long-running step. Deployment keeps two transfer sessions, skips matching content hashes, and resumes confirmed uploads after interruption. Existing manifest paths now seed the directory cache, avoiding repeated MKD/PWD/CWD requests for folders already deployed. New folders are still created normally, assets precede HTML, and the sitemap and completed manifest remain last. The manual deployment workflow also caches npm downloads. Transfer progress includes elapsed seconds; actual speed gains depend on the changed file count and hosting latency.

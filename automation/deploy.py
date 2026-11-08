@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path,PurePosixPath
 import ssl
+import time
 from contextlib import contextmanager
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event,Lock
@@ -88,7 +89,16 @@ def upload_file(ftp,source,destination,directories):
  with source.open('rb') as stream:ftp.storbinary('STOR '+temporary,stream,blocksize=131072)
  ftp.rename(temporary,destination)
 
+def known_directories(paths):
+ directories={''}
+ for destination in paths:
+  parent=PurePosixPath(destination).parent
+  for index in range(1,len(parent.parts)+1):
+   directories.add(PurePosixPath(*parent.parts[:index]).as_posix())
+ return directories
+
 def deploy(backend_only=False):
+ started=time.monotonic()
  values=config();files=list(managed_files(backend_only));hashes={}
  for source,destination in files:
   if source.is_symlink() or destination=='config.php' or destination.startswith('uploads/'):raise RuntimeError('Refusing to overwrite host configuration or user media')
@@ -104,7 +114,9 @@ def deploy(backend_only=False):
   count=0
   try:
    with ftp_session(values) as ftp:
-    directories={''}
+    # Successfully deployed paths prove their parents already exist. Avoid
+    # repeated MKD/PWD/CWD round trips on high-latency shared hosting.
+    directories=known_directories(effective)
     for source,destination in items:
      if stopped.is_set():return count
      with progress_lock:
@@ -117,7 +129,9 @@ def deploy(backend_only=False):
        # deployment manifest still commits last, after the root sitemap.
        write_json(ftp,PROGRESS,{'base':manifest_identity(previous),'completed':completed})
        since_checkpoint=0
-     if count%25==0:print('Transfer worker uploaded '+str(count)+' files.',flush=True)
+     if count%25==0:
+      elapsed=time.monotonic()-started
+      print(f'Transfer worker uploaded {count} files; total confirmed {len(completed)}; elapsed {elapsed:.0f}s.',flush=True)
   except Exception:stopped.set();raise
   return count
  # At most two authenticated FTP sessions, with no idle coordinator connection.

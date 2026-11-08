@@ -130,6 +130,19 @@ class BatchTests(unittest.TestCase):
   self.assertIn('sitemap',str(jobs['publish']['steps']).lower())
 
 class DeploymentTests(unittest.TestCase):
+ def test_existing_deployment_paths_skip_directory_network_checks(self):
+  import deploy
+  from unittest.mock import Mock
+  with tempfile.TemporaryDirectory() as directory:
+   source=Path(directory)/'page';source.write_text('updated')
+   ftp=Mock()
+   directories=deploy.known_directories({'en/category/tech/index.html':'old'})
+   deploy.upload_file(ftp,source,'en/category/tech/index.html',directories)
+   ftp.mkd.assert_not_called();ftp.cwd.assert_not_called();ftp.pwd.assert_not_called()
+   ftp.rename.assert_called_once_with('en/category/tech/index.html.uploading','en/category/tech/index.html')
+   deploy.upload_file(ftp,source,'en/category/new/index.html',directories)
+   ftp.mkd.assert_called_once_with('en/category/new')
+
  def test_unchanged_files_are_skipped_and_sitemap_is_committed_last(self):
   import deploy
   from unittest.mock import MagicMock

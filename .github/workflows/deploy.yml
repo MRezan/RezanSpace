@@ -25,6 +25,10 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            automation/package-lock.json
       - name: Wait for verified public HTTPS activation
         run: |
           python -u - <<'PY'
