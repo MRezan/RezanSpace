@@ -184,15 +184,18 @@ jobs:
           overwrite: true
           retention-days: 7
 
-  illustrations:
+  generation:
+    # Images and translations share one pool; no image-completion barrier.
+    # English is already in category-original artifacts, avoiding 16 copy jobs.
     needs: [prepare, originals]
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 100
     strategy:
       fail-fast: false
       max-parallel: 20
       matrix:
         topic: ${{ fromJSON(needs.prepare.outputs.topics) }}
+        language: [cover, es, pt-BR, hi, id, ar, fr, de, ja, bn, vi, tr, ko, it, pl]
     steps:
       - uses: actions/checkout@v5
         with: {persist-credentials: false}
@@ -203,7 +206,7 @@ jobs:
           name: category-original-${{ matrix.topic }}
           path: work/blog
       - name: Reuse the source run's completed illustration
-        if: ${{ inputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_covers), matrix.topic) }}
+        if: ${{ matrix.language == 'cover' && inputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_covers), matrix.topic) }}
         uses: actions/download-artifact@v7
         with:
           name: category-cover-${{ matrix.topic }}
@@ -211,13 +214,14 @@ jobs:
           github-token: ${{ github.token }}
           run-id: ${{ inputs.resume_run_id }}
       - name: Restore completed illustration on retry
-        if: github.run_attempt > 1
+        if: ${{ matrix.language == 'cover' && github.run_attempt > 1 }}
         continue-on-error: true
         uses: actions/download-artifact@v7
         with:
           name: category-cover-${{ matrix.topic }}
           path: work/blog
-      - name: Generate the category illustration on a separate runner
+      - name: Generate the category illustration on its own runner
+        if: matrix.language == 'cover'
         env: {TOPIC: '${{ matrix.topic }}'}
         run: |
           if [ ! -f "work/blog/topics/$TOPIC/cover.webp" ]; then
@@ -229,33 +233,14 @@ jobs:
           mkdir -p "artifact/topics/$TOPIC"
           cp "work/blog/topics/$TOPIC/cover.webp" "artifact/topics/$TOPIC/"
       - uses: actions/upload-artifact@v6
+        if: matrix.language == 'cover'
         with:
           name: category-cover-${{ matrix.topic }}
           path: artifact
           overwrite: true
           retention-days: 7
-  translations:
-    # Sequential phases keep the entire workflow at no more than 20 generation jobs.
-    needs: [prepare, originals, illustrations]
-    runs-on: ubuntu-24.04
-    timeout-minutes: 100
-    strategy:
-      fail-fast: false
-      max-parallel: 20
-      matrix:
-        topic: ${{ fromJSON(needs.prepare.outputs.topics) }}
-        language: [en, es, pt-BR, hi, id, ar, fr, de, ja, bn, vi, tr, ko, it, pl]
-    steps:
-      - uses: actions/checkout@v5
-        with: {persist-credentials: false}
-      - uses: actions/setup-python@v6
-        with: {python-version: '3.12'}
-      - uses: actions/download-artifact@v7
-        with:
-          name: category-original-${{ matrix.topic }}
-          path: work/blog
       - name: Reuse the source run's completed language
-        if: ${{ inputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_languages), format('{0}-{1}', matrix.topic, matrix.language)) }}
+        if: ${{ matrix.language != 'cover' && inputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_languages), format('{0}-{1}', matrix.topic, matrix.language)) }}
         uses: actions/download-artifact@v7
         with:
           name: category-language-${{ matrix.topic }}-${{ matrix.language }}
@@ -263,14 +248,14 @@ jobs:
           github-token: ${{ github.token }}
           run-id: ${{ inputs.resume_run_id }}
       - name: Restore completed language on retry
-        if: github.run_attempt > 1
+        if: ${{ matrix.language != 'cover' && github.run_attempt > 1 }}
         continue-on-error: true
         uses: actions/download-artifact@v7
         with:
           name: category-language-${{ matrix.topic }}-${{ matrix.language }}
           path: work/blog
       - name: Restore partial validated sections from the source run
-        if: ${{ inputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_progress), format('{0}-{1}', matrix.topic, matrix.language)) }}
+        if: ${{ matrix.language != 'cover' && inputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_progress), format('{0}-{1}', matrix.topic, matrix.language)) }}
         uses: actions/download-artifact@v7
         with:
           name: category-progress-${{ matrix.topic }}-${{ matrix.language }}
@@ -278,18 +263,19 @@ jobs:
           github-token: ${{ github.token }}
           run-id: ${{ inputs.resume_run_id }}
       - name: Restore partial validated sections on retry
-        if: github.run_attempt > 1
+        if: ${{ matrix.language != 'cover' && github.run_attempt > 1 }}
         continue-on-error: true
         uses: actions/download-artifact@v7
         with:
           name: category-progress-${{ matrix.topic }}-${{ matrix.language }}
           path: work/blog
       - uses: actions/cache/restore@v5
-        if: ${{ matrix.language != 'en' && !contains(fromJSON(needs.prepare.outputs.resume_languages), format('{0}-{1}', matrix.topic, matrix.language)) }}
+        if: ${{ matrix.language != 'cover' && !contains(fromJSON(needs.prepare.outputs.resume_languages), format('{0}-{1}', matrix.topic, matrix.language)) }}
         with:
           path: .cache/huggingface/hub/models--unsloth--Qwen3-4B-Instruct-2507-GGUF
           key: qwen-a06e946bb6b655725eafa393f4a9745d460374c9-cpu-v1
       - name: Translate faithfully and validate the requested language
+        if: matrix.language != 'cover'
         env:
           TOPIC: ${{ matrix.topic }}
           LANGUAGE: ${{ matrix.language }}
@@ -302,13 +288,14 @@ jobs:
           mkdir -p "artifact/topics/$TOPIC"
           cp "work/blog/topics/$TOPIC/$LANGUAGE.json" "artifact/topics/$TOPIC/"
       - uses: actions/upload-artifact@v6
+        if: matrix.language != 'cover'
         with:
           name: category-language-${{ matrix.topic }}-${{ matrix.language }}
           path: artifact
           overwrite: true
           retention-days: 7
       - name: Preserve validated sections even when generation fails
-        if: always()
+        if: ${{ always() && matrix.language != 'cover' }}
         env:
           TOPIC: ${{ matrix.topic }}
           LANGUAGE: ${{ matrix.language }}
@@ -318,7 +305,7 @@ jobs:
             cp "work/blog/topics/$TOPIC/$LANGUAGE.progress.json" "progress-artifact/topics/$TOPIC/"
           fi
       - uses: actions/upload-artifact@v6
-        if: always()
+        if: ${{ always() && matrix.language != 'cover' }}
         with:
           name: category-progress-${{ matrix.topic }}-${{ matrix.language }}
           path: progress-artifact
@@ -327,7 +314,7 @@ jobs:
           retention-days: 7
 
   publish:
-    needs: [prepare, originals, illustrations, translations]
+    needs: [prepare, originals, generation]
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     concurrency:

@@ -89,10 +89,10 @@ class BatchTests(unittest.TestCase):
  def test_both_generation_phases_preserve_and_restore_partial_checkpoints(self):
   import yaml
   workflow=yaml.safe_load((ROOT.parent/'.github/workflows/hourly-blog.yml').read_text())
-  for name in ['originals','translations']:
+  for name in ['originals','generation']:
    steps=workflow['jobs'][name]['steps']
    upload=[step for step in steps if step.get('uses')=='actions/upload-artifact@v6' and step.get('with',{}).get('path')=='progress-artifact']
-   self.assertEqual(len(upload),1);self.assertEqual(upload[0]['if'],'always()')
+   self.assertEqual(len(upload),1);self.assertIn('always()',upload[0]['if'])
    restore=[step for step in steps if step.get('name')=='Restore partial validated sections from the source run']
    self.assertEqual(len(restore),1);self.assertIn('resume_progress',restore[0]['if'])
  def test_missing_translation_blocks_the_batch(self):
@@ -112,12 +112,21 @@ class BatchTests(unittest.TestCase):
   trigger=workflow.get('on',workflow.get(True))
   self.assertEqual(trigger['schedule'],[{'cron':'17 * * * *'}])
   self.assertEqual(workflow['concurrency']['queue'],'max')
-  jobs=workflow['jobs'];strategy=jobs['translations']['strategy']
+  jobs=workflow['jobs'];strategy=jobs['generation']['strategy']
   self.assertEqual(strategy['max-parallel'],20)
-  self.assertEqual(set(strategy['matrix']['language']),set(blog.LANGUAGES))
+  self.assertEqual(set(strategy['matrix']['language']),{'cover'}|set(blog.LANGUAGES)-{'en'})
   self.assertEqual(len(batch.TOPICS)*len(strategy['matrix']['language']),240)
-  self.assertIn('illustrations',jobs['translations']['needs'])
-  self.assertIn('translations',jobs['publish']['needs'])
+  self.assertEqual(jobs['generation']['needs'],['prepare','originals'])
+  self.assertNotIn('illustrations',jobs)
+  self.assertIn('generation',jobs['publish']['needs'])
+  self.assertFalse(jobs['generation']['strategy']['fail-fast'])
+  # Original artifacts supply English; the shared matrix supplies each cover
+  # and every other language exactly once without duplicate copy jobs.
+  tasks=[(topic['slug'],language) for topic in batch.TOPICS for language in strategy['matrix']['language']]
+  self.assertLessEqual(len(tasks),256)
+  self.assertEqual(sum(language=='cover' for _,language in tasks),16)
+  articles={(topic['slug'],'en') for topic in batch.TOPICS}|{(topic,language) for topic,language in tasks if language!='cover'}
+  self.assertEqual(articles,{(topic['slug'],language) for topic in batch.TOPICS for language in blog.LANGUAGES})
   self.assertIn('sitemap',str(jobs['publish']['steps']).lower())
 
 class DeploymentTests(unittest.TestCase):

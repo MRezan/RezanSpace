@@ -178,3 +178,13 @@ checked for `runs.using: node24`; upload/download names, paths and recovery inpu
 are preserved. This removes the Node 20 deprecation warning for new runs.
 Already-started runs retain their original workflow snapshot and may still show
 that warning; restarting their old jobs does not update the action versions.
+
+
+Parallel generation update (2026-11-08): removed the all-images-before-translation
+barrier. A shared 20-slot matrix runs the 16 covers and 224 non-English translations
+concurrently, while the 16 English originals are reused directly. Publication
+still waits for every task and validates all 240 articles and illustrations.
+Inference models remain on separate runners, completed artifacts remain reusable,
+and failed tasks do not cancel unrelated work. Already-running workflows keep
+their saved dependency graph; checkpoint recovery on current main applies this
+scheduling change without regenerating completed originals.

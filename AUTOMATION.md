@@ -18,12 +18,15 @@ categories**, then creates an English original, an SSD-1B illustration and all
 category names. `automation/sources.json` explicitly associates approved publishers
 with each category; it is no longer limited to science and technology.
 
-Originals, illustrations and translations run in separate phases, each with
-`max-parallel: 20`. The translation matrix contains 16 × 15 = 240 jobs. Separating
-phases keeps this workflow at no more than 20 simultaneous generation jobs and
-keeps large text/image models on different runners. GitHub account capacity and
-other workflows can reduce available slots. Hourly scheduling is not a promise
-that 240 CPU-generated articles finish within an hour. Whole batches use a FIFO
+Up to 16 English originals run concurrently. After originals finish, illustrations
+and non-English translations share a single `max-parallel: 20` matrix. Each
+category has 15 tasks: one cover plus 14 translations, giving 240 tasks total.
+Translations can start while images are still rendering. English is reused from
+its original artifact, eliminating 16 redundant copy jobs. Text/image models
+stay on separate runners; their combined generation concurrency never exceeds 20.
+GitHub account capacity and other workflows can reduce available slots. Hourly
+scheduling is not a promise that a complete CPU-generated batch finishes within
+an hour. Whole batches use a FIFO
 concurrency queue (`queue: max`, maximum 100 pending runs); new work does not
 cancel an active batch. Runs beyond GitHub's queue limits can be rejected.
 
@@ -118,7 +121,7 @@ quality cannot be established by unit tests alone.
 
 Run **Deploy live multilingual site** manually to verify HTTPS, export the migrated live API, rebuild all language pages from real published posts, upload over FTPS and check the live sitemap and pages. It shares a deployment lock with AI publishing and preserves the host configuration and user-uploaded media.
 
-To accelerate or recover a run, supply its ID as `resume_run_id`. The workflow verifies that it is this repository’s main-branch AI workflow, restores its English/source checkpoint, illustration and completed languages, and generates only missing outputs with a 15-worker matrix. An already-running workflow retains its original concurrency setting; start a checkpoint recovery run to apply the new limit.
+To accelerate or recover a run, supply its ID as `resume_run_id`. The workflow verifies that it is this repository’s main-branch AI workflow, restores its English/source checkpoint, illustration and completed languages, and generates only missing outputs in the shared 20-slot image/translation matrix. An already-running workflow retains its original concurrency setting; start a checkpoint recovery run to apply the new limit.
 
 ### Hosting certificate chain
 
