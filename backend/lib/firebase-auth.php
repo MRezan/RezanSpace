@@ -29,7 +29,8 @@ function firebaseRequest(string $method,array $payload):array{
  return firebaseHttp('https://identitytoolkit.googleapis.com/v1/accounts:'.$method.'?key='.rawurlencode(REZAN_FIREBASE_API_KEY),$payload);
 }
 /** JWT library handles RS256 signature and temporal checks; project/provider checks are mandatory. */
-function verifyGoogleFirebaseToken(string $token,?array $certificates=null,?int $now=null):array{
+function verifyFirebaseIdentity(string $token,string $provider,?array $certificates=null,?int $now=null):array{
+ if(!in_array($provider,['google.com','password'],true))throw new FirebaseAuthFailure('verification_failed',401);
  if(strlen($token)>16000||count(explode('.',$token))!==3)throw new FirebaseAuthFailure('verification_failed',401);
  $parts=explode('.',$token);
  try{$header=json_decode(JWT::urlsafeB64Decode($parts[0]),true,16,JSON_THROW_ON_ERROR);}catch(Throwable){throw new FirebaseAuthFailure('verification_failed',401);}
@@ -40,11 +41,13 @@ function verifyGoogleFirebaseToken(string $token,?array $certificates=null,?int 
  $previous=JWT::$timestamp;$time=$now??time();
  try{if($now!==null)JWT::$timestamp=$now;$claims=(array)JWT::decode($token,new Key($certificate,'RS256'));}catch(Throwable){throw new FirebaseAuthFailure('verification_failed',401);}finally{JWT::$timestamp=$previous;}
  $firebase=(array)($claims['firebase']??[]);$subject=$claims['sub']??null;
- if(($claims['aud']??'')!==REZAN_FIREBASE_PROJECT||($claims['iss']??'')!=='https://securetoken.google.com/'.REZAN_FIREBASE_PROJECT||!is_string($subject)||$subject===''||strlen($subject)>128||($claims['email_verified']??false)!==true||($firebase['sign_in_provider']??'')!=='google.com'||isset($firebase['tenant'])||!filter_var($claims['email']??'',FILTER_VALIDATE_EMAIL)||!is_int($claims['exp']??null)||!is_int($claims['iat']??null)||!is_int($claims['auth_time']??null)||$claims['auth_time']>$time+30||$claims['auth_time']<$time-300)throw new FirebaseAuthFailure('verification_failed',401);
+ if(($claims['aud']??'')!==REZAN_FIREBASE_PROJECT||($claims['iss']??'')!=='https://securetoken.google.com/'.REZAN_FIREBASE_PROJECT||!is_string($subject)||$subject===''||strlen($subject)>128||($claims['email_verified']??false)!==true||($firebase['sign_in_provider']??'')!==$provider||isset($firebase['tenant'])||!filter_var($claims['email']??'',FILTER_VALIDATE_EMAIL)||!is_int($claims['exp']??null)||!is_int($claims['iat']??null)||!is_int($claims['auth_time']??null)||$claims['auth_time']>$time+30||$claims['auth_time']<$time-300)throw new FirebaseAuthFailure('verification_failed',401);
  return $claims;
 }
+function verifyGoogleFirebaseToken(string $token,?array $certificates=null,?int $now=null):array{return verifyFirebaseIdentity($token,'google.com',$certificates,$now);}
 function ensureFirebaseAuthTables(PDO $pdo):void{
  $pdo->exec('CREATE TABLE IF NOT EXISTS firebase_auth_links (user_id BIGINT UNSIGNED PRIMARY KEY,firebase_uid VARCHAR(128) NULL UNIQUE,valid_after BIGINT UNSIGNED NOT NULL DEFAULT 0,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+ $pdo->exec('CREATE TABLE IF NOT EXISTS firebase_password_resets(user_id BIGINT UNSIGNED PRIMARY KEY,requested_at BIGINT UNSIGNED NOT NULL,expires_at BIGINT UNSIGNED NOT NULL,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB');
  $pdo->exec('CREATE TABLE IF NOT EXISTS auth_rate_limits (bucket CHAR(64) PRIMARY KEY,attempts INT UNSIGNED NOT NULL DEFAULT 1,expires_at BIGINT UNSIGNED NOT NULL,INDEX(expires_at)) ENGINE=InnoDB');
 }
 function authRateLimit(PDO $pdo,string $scope,int $limit,int $window=3600,?int $now=null):void{
@@ -77,11 +80,12 @@ function googleAccount(PDO $pdo,array $claims,?string $existingPassword=null):ar
  }catch(Throwable $error){if($pdo->inTransaction())$pdo->rollBack();throw $error;}
 }
 function requestAccountReset(PDO $pdo,string $email,?callable $request=null):void{
- $request??='firebaseRequest';$q=$pdo->prepare('SELECT id FROM users WHERE email=? LIMIT 1');$q->execute([$email]);if(!$q->fetchColumn())return;
+ $request??='firebaseRequest';$q=$pdo->prepare('SELECT id FROM users WHERE email=? LIMIT 1');$q->execute([$email]);$id=$q->fetchColumn();if(!$id)return;
  // Existing PHP users are enrolled with an undisclosed random password solely
  // so Firebase can deliver its standard reset email. No hashes are exported.
  try{$request('signUp',['email'=>$email,'password'=>bin2hex(random_bytes(32)),'returnSecureToken'=>false]);}catch(FirebaseAuthFailure $error){if($error->safeCode!=='EMAIL_EXISTS')throw $error;}
- $request('sendOobCode',['requestType'=>'PASSWORD_RESET','email'=>$email,'continueUrl'=>REZAN_AUTH_ORIGIN.'/account/']);
+ $request('sendOobCode',['requestType'=>'PASSWORD_RESET','email'=>$email,'continueUrl'=>REZAN_AUTH_ORIGIN.'/account/?recovery=complete']);
+ $q=$pdo->prepare('INSERT INTO firebase_password_resets(user_id,requested_at,expires_at) VALUES(?,?,?) ON DUPLICATE KEY UPDATE requested_at=VALUES(requested_at),expires_at=VALUES(expires_at)');$q->execute([$id,time(),time()+86400]);
 }
 function completeAccountReset(PDO $pdo,string $code,string $password,?callable $request=null,?int $now=null):void{
  if(strlen($password)<8||strlen($password)>128||strlen($code)<10||strlen($code)>2048)throw new FirebaseAuthFailure('invalid_reset',422);
@@ -95,6 +99,21 @@ function completeAccountReset(PDO $pdo,string $code,string $password,?callable $
   $q=$pdo->prepare('UPDATE users SET password_hash=? WHERE id=?');$q->execute([password_hash($password,PASSWORD_DEFAULT),$id]);
   $q=$pdo->prepare('DELETE FROM user_sessions WHERE user_id=?');$q->execute([$id]);
   $q=$pdo->prepare('INSERT INTO firebase_auth_links(user_id,valid_after) VALUES(?,?) ON DUPLICATE KEY UPDATE valid_after=VALUES(valid_after)');$q->execute([$id,($now??time())+1]);
+  $q=$pdo->prepare('DELETE FROM firebase_password_resets WHERE user_id=?');$q->execute([$id]);
   $pdo->commit();
+ }catch(Throwable $error){if($pdo->inTransaction())$pdo->rollBack();throw $error;}
+}
+
+/** Complete the standard Firebase-hosted recovery without editing its email template. */
+function finishHostedRecovery(PDO $pdo,array $claims,string $password,?int $now=null):array{
+ $now??=time();if(strlen($password)<8||strlen($password)>128)throw new FirebaseAuthFailure('invalid_reset',422);
+ $pdo->beginTransaction();
+ try{
+  $q=$pdo->prepare('SELECT u.id,u.name,u.email,r.requested_at,r.expires_at,l.firebase_uid FROM users u JOIN firebase_password_resets r ON r.user_id=u.id LEFT JOIN firebase_auth_links l ON l.user_id=u.id WHERE u.email=? LIMIT 1 FOR UPDATE');$q->execute([strtolower($claims['email'])]);$user=$q->fetch();
+  if(!$user||(int)$user['expires_at']<=$now||(int)$claims['auth_time']<(int)$user['requested_at']||(!empty($user['firebase_uid'])&&$user['firebase_uid']!==$claims['sub']))throw new FirebaseAuthFailure('invalid_reset',400);
+  $q=$pdo->prepare('UPDATE users SET password_hash=? WHERE id=?');$q->execute([password_hash($password,PASSWORD_DEFAULT),$user['id']]);
+  $q=$pdo->prepare('DELETE FROM user_sessions WHERE user_id=?');$q->execute([$user['id']]);
+  $q=$pdo->prepare('INSERT INTO firebase_auth_links(user_id,valid_after) VALUES(?,?) ON DUPLICATE KEY UPDATE valid_after=VALUES(valid_after)');$q->execute([$user['id'],$now+1]);
+  $q=$pdo->prepare('DELETE FROM firebase_password_resets WHERE user_id=?');$q->execute([$user['id']]);$pdo->commit();return $user;
  }catch(Throwable $error){if($pdo->inTransaction())$pdo->rollBack();throw $error;}
 }

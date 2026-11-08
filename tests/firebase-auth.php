@@ -21,12 +21,13 @@ class TestDatabase extends PDO {
  public function __construct(){parent::__construct('sqlite::memory:',null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]);}
  public function prepare(string $query,array $options=[]):PDOStatement|false{
   $query=str_replace(' LIMIT 1 FOR UPDATE',' LIMIT 1',$query);
+  $query=str_replace('ON DUPLICATE KEY UPDATE requested_at=VALUES(requested_at),expires_at=VALUES(expires_at)','ON CONFLICT(user_id) DO UPDATE SET requested_at=excluded.requested_at,expires_at=excluded.expires_at',$query);
   $query=str_replace('ON DUPLICATE KEY UPDATE firebase_uid=VALUES(firebase_uid)','ON CONFLICT(user_id) DO UPDATE SET firebase_uid=excluded.firebase_uid',$query);
   $query=str_replace('ON DUPLICATE KEY UPDATE valid_after=VALUES(valid_after)','ON CONFLICT(user_id) DO UPDATE SET valid_after=excluded.valid_after',$query);
   return parent::prepare($query,$options);
  }
 }
-$db=new TestDatabase();$db->exec('CREATE TABLE users(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT,email TEXT UNIQUE,password_hash TEXT,role TEXT DEFAULT "user");CREATE TABLE firebase_auth_links(user_id INTEGER PRIMARY KEY,firebase_uid TEXT UNIQUE,valid_after INTEGER DEFAULT 0);CREATE TABLE user_sessions(user_id INTEGER,token_hash TEXT)');
+$db=new TestDatabase();$db->exec('CREATE TABLE users(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT,email TEXT UNIQUE,password_hash TEXT,role TEXT DEFAULT "user");CREATE TABLE firebase_auth_links(user_id INTEGER PRIMARY KEY,firebase_uid TEXT UNIQUE,valid_after INTEGER DEFAULT 0);CREATE TABLE firebase_password_resets(user_id INTEGER PRIMARY KEY,requested_at INTEGER,expires_at INTEGER);CREATE TABLE user_sessions(user_id INTEGER,token_hash TEXT)');
 $user=googleAccount($db,$claims);check((int)$user['id']===1,'New Google account');check($db->query('SELECT role FROM users')->fetchColumn()==='user','No Google admin elevation');
 check((int)googleAccount($db,$claims)['id']===1,'Repeated sign-in retains account');
 $pw=password_hash('original-password',PASSWORD_DEFAULT);$q=$db->prepare('INSERT INTO users(name,email,password_hash) VALUES(?,?,?)');$q->execute(['Existing','reader@example.org',$pw]);$third=$claims;$third['email']='reader@example.org';$third['sub']='other-uid';
@@ -37,4 +38,15 @@ $db->exec('INSERT INTO user_sessions VALUES(2,"old-session")');$used=false;
 $reset=function($method,$payload)use(&$used){if($used)throw new FirebaseAuthFailure('INVALID_OOB_CODE');if(isset($payload['newPassword']))$used=true;return ['email'=>'reader@example.org','requestType'=>'PASSWORD_RESET'];};
 completeAccountReset($db,'single-use-test-code','new-strong-password',$reset,$now+1);
 check(password_verify('new-strong-password',$db->query('SELECT password_hash FROM users WHERE id=2')->fetchColumn()),'Reset updates legacy hash');check((int)$db->query('SELECT COUNT(*) FROM user_sessions')->fetchColumn()===0,'Reset revokes old sessions');denied(fn()=>completeAccountReset($db,'single-use-test-code','newer-password',$reset),'INVALID_OOB_CODE');denied(fn()=>googleAccount($db,$third),'reauth_required');denied(fn()=>completeAccountReset($db,'single-use-test-code','short',$reset),'invalid_reset');
+$passwordClaims=$claims;$passwordClaims['firebase']=['sign_in_provider'=>'password'];
+check(verifyFirebaseIdentity($token($passwordClaims),'password',['test'=>$public],$now)['email']==='reader@gmail.com','Password recovery proof is verified');
+denied(fn()=>verifyGoogleFirebaseToken($token($passwordClaims),['test'=>$public],$now));
+$unverified=$passwordClaims;$unverified['email_verified']=false;denied(fn()=>verifyFirebaseIdentity($token($unverified),'password',['test'=>$public],$now));
+$db->exec('INSERT INTO user_sessions VALUES(1,"old-google-session")');$q=$db->prepare('INSERT INTO firebase_password_resets VALUES(?,?,?)');$q->execute([1,$now-2,$now+60]);
+check((int)finishHostedRecovery($db,$passwordClaims,'hosted-new-password',$now)['id']===1,'Hosted reset preserves legacy account');
+check(password_verify('hosted-new-password',$db->query('SELECT password_hash FROM users WHERE id=1')->fetchColumn()),'Hosted reset syncs local password');
+check((int)$db->query('SELECT COUNT(*) FROM user_sessions')->fetchColumn()===0,'Hosted reset revokes sessions');
+denied(fn()=>finishHostedRecovery($db,$passwordClaims,'another-password',$now),'invalid_reset');
+$q->execute([1,$now+1,$now+60]);denied(fn()=>finishHostedRecovery($db,$passwordClaims,'another-password',$now),'invalid_reset');
+$db->exec('DELETE FROM firebase_password_resets WHERE user_id=1');$q->execute([1,$now-20,$now-1]);denied(fn()=>finishHostedRecovery($db,$passwordClaims,'another-password',$now),'invalid_reset');
 echo "$tests Firebase security checks passed.\n";

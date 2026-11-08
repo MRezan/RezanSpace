@@ -15,6 +15,11 @@ try{
   $user=googleAccount($pdo,$claims,isset($data['password'])?(string)$data['password']:null);
   exit(json_encode(issueSession($pdo,(int)$user['id'],$user['name'],$user['email'])));
  }
+ if($action==='finish-recovery'){
+  $claims=verifyFirebaseIdentity((string)($data['id_token']??''),'password');
+  $user=finishHostedRecovery($pdo,$claims,(string)($data['password']??''));
+  exit(json_encode(issueSession($pdo,(int)$user['id'],$user['name'],$user['email'])));
+ }
  if($action==='forgot'){
   $email=strtolower(trim((string)($data['email']??'')));if(!filter_var($email,FILTER_VALIDATE_EMAIL))throw new FirebaseAuthFailure('invalid_email',422);
   authRateLimit($pdo,'reset-email:'.$email,3);requestAccountReset($pdo,$email);
