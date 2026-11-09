@@ -95,6 +95,30 @@ class BatchTests(unittest.TestCase):
    self.assertEqual(len(upload),1);self.assertIn('always()',upload[0]['if'])
    restore=[step for step in steps if step.get('name')=='Restore partial validated sections from the source run']
    self.assertEqual(len(restore),1);self.assertIn('resume_progress',restore[0]['if'])
+ def test_ssh_recovery_uses_the_resolved_source_in_every_artifact_download(self):
+  import yaml
+  workflow=yaml.safe_load((ROOT.parent/'.github/workflows/hourly-blog.yml').read_text())
+  trigger=workflow.get('on',workflow.get(True))
+  self.assertEqual(trigger['push'],{'branches':['main'],'paths':['.github/blog-recovery-trigger']})
+  self.assertEqual(workflow['jobs']['prepare']['outputs']['resume_run_id'],'${{ steps.recovery.outputs.run_id }}')
+  for name,job in workflow['jobs'].items():
+   for step in job['steps']:
+    if step.get('uses')=='actions/download-artifact@v7' and 'run-id' in step.get('with',{}):
+     expected='steps.recovery.outputs.run_id' if name=='prepare' else 'needs.prepare.outputs.resume_run_id'
+     self.assertEqual(step['with']['run-id'],'${{ '+expected+' }}')
+ def test_recovery_resolution_rejects_invalid_ids_before_network_access(self):
+  import yaml,subprocess,os
+  workflow=yaml.safe_load((ROOT.parent/'.github/workflows/hourly-blog.yml').read_text())
+  step=next(s for s in workflow['jobs']['prepare']['steps'] if s.get('id')=='recovery')
+  script=step['run'].split("<<'PYRECOVERY'\n",1)[1].rsplit('PYRECOVERY',1)[0]
+  with tempfile.TemporaryDirectory() as directory:
+   work=Path(directory);(work/'.github').mkdir()
+   for pushed,value,valid in [('false','42520619650',True),('false','',True),('false','42\nother=value',False),('true','42520619650',True),('true','',False),('true','../unsafe',False)]:
+    (work/'.github/blog-recovery-trigger').write_text(value)
+    output=work/'outputs';output.write_text('')
+    result=subprocess.run([sys.executable,'-c',script],cwd=work,env={**os.environ,'IS_PUSH':pushed,'INPUT_RUN_ID':value,'GITHUB_OUTPUT':str(output)},capture_output=True)
+    self.assertEqual(result.returncode==0,valid)
+    self.assertEqual(output.read_text(),'run_id='+value+'\n' if valid else '')
  def test_missing_translation_blocks_the_batch(self):
   with tempfile.TemporaryDirectory() as directory:
    work=Path(directory);self.prepare(work)
@@ -111,7 +135,8 @@ class BatchTests(unittest.TestCase):
   workflow=yaml.safe_load((ROOT.parent/'.github/workflows/hourly-blog.yml').read_text())
   trigger=workflow.get('on',workflow.get(True))
   self.assertEqual(trigger['schedule'],[{'cron':'17 * * * *'}])
-  self.assertEqual(workflow['concurrency']['queue'],'max')
+  self.assertEqual(workflow['concurrency']['cancel-in-progress'],"${{ github.event_name == 'push' }}")
+  self.assertNotIn('queue',workflow['concurrency'])
   jobs=workflow['jobs'];strategy=jobs['generation']['strategy']
   self.assertEqual(strategy['max-parallel'],20)
   self.assertEqual(set(strategy['matrix']['language']),{'cover'}|set(blog.LANGUAGES)-{'en'})

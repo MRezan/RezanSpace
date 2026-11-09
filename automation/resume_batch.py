@@ -8,7 +8,7 @@ from blog import LANGUAGES
 
 def validate_batch_checkpoint(run,artifacts,repository):
  if run.get('head_repository',{}).get('full_name')!=repository or run.get('head_branch')!='main':raise ValueError('Source run must belong to this repository main branch')
- if run.get('event') not in ['workflow_dispatch','schedule'] or run.get('path','').split('@')[0]!='.github/workflows/hourly-blog.yml':raise ValueError('Source must be an all-category publishing run')
+ if run.get('event') not in ['workflow_dispatch','schedule','push'] or run.get('path','').split('@')[0]!='.github/workflows/hourly-blog.yml':raise ValueError('Source must be an all-category publishing run')
  names={item['name'] for item in artifacts if not item.get('expired',False)}
  if 'batch-plan' not in names:raise ValueError('Source run has no retained batch plan')
  return {

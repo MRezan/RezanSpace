@@ -35,9 +35,55 @@ class GenerationRecoveryTests(unittest.TestCase):
   validate(result,blog.SECTION_SCHEMA)
   self.assertEqual(' '.join(paragraphs).split(),' '.join(result['paragraphs']).split())
  def test_long_sentence_and_code_are_never_cut_or_padded(self):
-  for paragraphs in [['A'*1500]*2,['Use `a. b` here. '*120,'Short note.'],['Too short.']*2]:
+  for paragraphs in [['A'*1500]*2,['`'+'Unclosed code. '*120,'Short note.'],['Too short.']*2]:
    original={'paragraphs':paragraphs}
    self.assertEqual(blog.rebalance_paragraphs(copy.deepcopy(original)),original)
+ def test_inline_code_does_not_disable_sentence_repair(self):
+  original={'paragraphs':['Use `a. b` here. '*120,'Short final limitation.']}
+  result=blog.rebalance_paragraphs(original)
+  from jsonschema import validate
+  validate(result,blog.SECTION_SCHEMA)
+  self.assertEqual(' '.join(original['paragraphs']).split(),' '.join(result['paragraphs']).split())
+  self.assertEqual(sum(p.count('`a. b`') for p in result['paragraphs']),120)
+  self.assertTrue(all(p.count('`')%2==0 for p in result['paragraphs']))
+ def test_bengali_and_hindi_danda_boundaries_rebalance(self):
+  for sentence in ['এটি তথ্যভিত্তিক ব্যাখ্যা এবং গবেষণার সীমাবদ্ধতা দেখায়।','यह प्रमाण आधारित विवरण है और शोध की सीमाओं को स्पष्ट करता है।']:
+   original={'paragraphs':[sentence*25]*2}
+   result=blog.rebalance_paragraphs(original)
+   from jsonschema import validate
+   validate(result,blog.SECTION_SCHEMA)
+   self.assertEqual(''.join(original['paragraphs']),''.join(result['paragraphs']).replace('। ', '।'))
+ def test_long_review_notes_never_discard_an_approved_draft(self):
+  def respond(messages,schema,budget):
+   if budget==1000:return {'approved':True,'issues':'Review detail. '*100}
+   return self.response(messages,schema,budget)
+  with patch.object(blog,'request',side_effect=respond) as request,patch('langid.classify',return_value=('en',1)):
+   blog.generate(self.manifest,'en')
+  self.assertEqual(sum(c.args[2]==1800 for c in request.call_args_list),1)
+  self.assertEqual(sum(c.args[2]==2000 for c in request.call_args_list),5)
+ def test_long_rejection_notes_still_reject_and_guide_revision(self):
+  findings='Unsupported test claim. '*80
+  def respond(messages,schema,budget):
+   if budget==1000:return {'approved':False,'issues':findings}
+   return self.response(messages,schema,budget)
+  with patch.object(blog,'request',side_effect=respond) as request,patch('langid.classify',return_value=('en',1)),patch('sys.stdout',new_callable=io.StringIO) as output,self.assertRaises(blog.BlogError):
+   blog.generate(self.manifest,'en')
+  outlines=[c.args[0][-1]['content'] for c in request.call_args_list if c.args[2]==1800]
+  self.assertIn(findings,outlines[1]);self.assertNotIn(findings,output.getvalue())
+ def test_malformed_review_retries_only_review_and_preserves_checkpoint(self):
+  with tempfile.TemporaryDirectory() as directory:
+   checkpoint=Path(directory)/'en.progress.json'
+   def respond(messages,schema,budget):
+    if budget==1000:return {'approved':'yes','issues':''}
+    return self.response(messages,schema,budget)
+   with patch.object(blog,'request',side_effect=respond) as request,patch('langid.classify',return_value=('en',1)),patch('sys.stdout',new_callable=io.StringIO),self.assertRaises(blog.ReviewResponseError):
+    blog.generate(self.manifest,'en',checkpoint=checkpoint)
+   self.assertEqual(sum(c.args[2]==2000 for c in request.call_args_list),5)
+   self.assertEqual(sum(c.args[2]==1000 for c in request.call_args_list),3)
+   self.assertTrue(all('paragraphs' in s for s in json.loads(checkpoint.read_text())['article']['sections']))
+   with patch.object(blog,'request',side_effect=self.response) as request,patch('langid.classify',return_value=('en',1)):
+    blog.generate(self.manifest,'en',checkpoint=checkpoint)
+   self.assertEqual([c.args[2] for c in request.call_args_list],[1000])
  def test_cjk_sentences_rebalance_without_requiring_spaces(self):
   original={'paragraphs':['これは根拠に基づく説明であり、研究の限界を示しています。'*40]*2}
   result=blog.rebalance_paragraphs(original)
@@ -107,6 +153,10 @@ class GenerationRecoveryTests(unittest.TestCase):
    with patch.object(blog,'request',side_effect=reject),patch('langid.classify',return_value=('en',1)),patch('sys.stdout',new_callable=io.StringIO),self.assertRaises(blog.BlogError):
     blog.generate(self.manifest,'en',checkpoint=checkpoint)
    self.assertIsNone(json.loads(checkpoint.read_text())['article'])
+   self.assertIn('unsupported claim',json.loads(checkpoint.read_text())['revision_feedback'])
+   with patch.object(blog,'request',side_effect=self.response) as request,patch('langid.classify',return_value=('en',1)):
+    blog.generate(self.manifest,'en',checkpoint=checkpoint)
+   self.assertIn('unsupported claim',request.call_args_list[0].args[0][-1]['content'])
  def test_cli_removes_progress_only_after_reviewed_output_is_saved(self):
   with tempfile.TemporaryDirectory() as directory:
    work=Path(directory);blog.save(work/'manifest.json',self.manifest)

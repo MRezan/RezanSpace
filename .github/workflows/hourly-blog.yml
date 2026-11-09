@@ -1,6 +1,9 @@
 name: Hourly all-category publishing
 run-name: ${{ inputs.dry_run && 'Preview — 16 categories × 15 languages' || 'Live — 16 categories × 15 languages' }}
 on:
+  push:
+    branches: [main]
+    paths: [.github/blog-recovery-trigger]
   schedule:
     - cron: '17 * * * *'
   workflow_dispatch:
@@ -18,8 +21,8 @@ permissions:
   actions: read
 concurrency:
   group: rezan-hourly-category-batch
-  cancel-in-progress: false
-  queue: max
+  # An explicit recovery supersedes a known-broken batch; hourly ticks wait.
+  cancel-in-progress: ${{ github.event_name == 'push' }}
 
 env:
   BLOG_WORK_DIR: work/blog
@@ -34,11 +37,12 @@ env:
   CPU_IMAGE_STEPS: '16'
 jobs:
   prepare:
-    if: ${{ github.event_name == 'workflow_dispatch' || vars.AUTO_PUBLISH_ENABLED == 'true' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'push' || vars.AUTO_PUBLISH_ENABLED == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     outputs:
       topics: ${{ steps.plan.outputs.topics }}
+      resume_run_id: ${{ steps.recovery.outputs.run_id }}
       resume_originals: ${{ steps.resume.outputs.originals || '[]' }}
       resume_progress: ${{ steps.resume.outputs.progress || '[]' }}
       resume_covers: ${{ steps.resume.outputs.covers || '[]' }}
@@ -46,6 +50,20 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with: {persist-credentials: false}
+      - name: Resolve the explicit recovery source
+        id: recovery
+        env:
+          INPUT_RUN_ID: ${{ inputs.resume_run_id }}
+          IS_PUSH: ${{ github.event_name == 'push' }}
+        run: |
+          python - <<'PYRECOVERY'
+          import os
+          from pathlib import Path
+          value=Path('.github/blog-recovery-trigger').read_text().strip() if os.environ['IS_PUSH']=='true' else os.environ.get('INPUT_RUN_ID','')
+          if value and not (value.isascii() and value.isdigit()):raise ValueError('Recovery source must be a numeric run ID')
+          if os.environ['IS_PUSH']=='true' and not value:raise ValueError('Explicit recovery requires a source run ID')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as output:output.write('run_id='+value+'\n')
+          PYRECOVERY
       - uses: actions/setup-python@v6
         with: {python-version: '3.12'}
       - uses: actions/setup-node@v5
@@ -72,20 +90,20 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
         run: mkdir -p work/blog && printf '[]' > work/blog/snapshot.json
       - name: Validate the recovery source and reusable category outputs
-        if: inputs.resume_run_id != ''
+        if: steps.recovery.outputs.run_id != ''
         id: resume
         env:
           GH_TOKEN: ${{ github.token }}
-          RESUME_RUN_ID: ${{ inputs.resume_run_id }}
+          RESUME_RUN_ID: ${{ steps.recovery.outputs.run_id }}
         run: python automation/resume_batch.py
       - name: Reuse the source run's complete category evidence plan
-        if: inputs.resume_run_id != ''
+        if: steps.recovery.outputs.run_id != ''
         uses: actions/download-artifact@v7
         with:
           name: batch-plan
           path: work/blog
           github-token: ${{ github.token }}
-          run-id: ${{ inputs.resume_run_id }}
+          run-id: ${{ steps.recovery.outputs.run_id }}
       - name: Restore this batch's source plan when retrying
         if: github.run_attempt > 1
         continue-on-error: true
@@ -117,13 +135,13 @@ jobs:
       - uses: actions/download-artifact@v7
         with: {name: batch-plan, path: work/blog}
       - name: Reuse the source run's validated original
-        if: ${{ inputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_originals), matrix.topic) }}
+        if: ${{ needs.prepare.outputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_originals), matrix.topic) }}
         uses: actions/download-artifact@v7
         with:
           name: category-original-${{ matrix.topic }}
           path: work/blog
           github-token: ${{ github.token }}
-          run-id: ${{ inputs.resume_run_id }}
+          run-id: ${{ needs.prepare.outputs.resume_run_id }}
       - name: Restore completed original on retry
         if: github.run_attempt > 1
         continue-on-error: true
@@ -132,13 +150,13 @@ jobs:
           name: category-original-${{ matrix.topic }}
           path: work/blog
       - name: Restore partial validated sections from the source run
-        if: ${{ inputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_progress), format('{0}-en', matrix.topic)) }}
+        if: ${{ needs.prepare.outputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_progress), format('{0}-en', matrix.topic)) }}
         uses: actions/download-artifact@v7
         with:
           name: category-progress-${{ matrix.topic }}-en
           path: work/blog
           github-token: ${{ github.token }}
-          run-id: ${{ inputs.resume_run_id }}
+          run-id: ${{ needs.prepare.outputs.resume_run_id }}
       - name: Restore partial validated sections on retry
         if: github.run_attempt > 1
         continue-on-error: true
@@ -206,13 +224,13 @@ jobs:
           name: category-original-${{ matrix.topic }}
           path: work/blog
       - name: Reuse the source run's completed illustration
-        if: ${{ matrix.language == 'cover' && inputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_covers), matrix.topic) }}
+        if: ${{ matrix.language == 'cover' && needs.prepare.outputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_covers), matrix.topic) }}
         uses: actions/download-artifact@v7
         with:
           name: category-cover-${{ matrix.topic }}
           path: work/blog
           github-token: ${{ github.token }}
-          run-id: ${{ inputs.resume_run_id }}
+          run-id: ${{ needs.prepare.outputs.resume_run_id }}
       - name: Restore completed illustration on retry
         if: ${{ matrix.language == 'cover' && github.run_attempt > 1 }}
         continue-on-error: true
@@ -240,13 +258,13 @@ jobs:
           overwrite: true
           retention-days: 7
       - name: Reuse the source run's completed language
-        if: ${{ matrix.language != 'cover' && inputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_languages), format('{0}-{1}', matrix.topic, matrix.language)) }}
+        if: ${{ matrix.language != 'cover' && needs.prepare.outputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_languages), format('{0}-{1}', matrix.topic, matrix.language)) }}
         uses: actions/download-artifact@v7
         with:
           name: category-language-${{ matrix.topic }}-${{ matrix.language }}
           path: work/blog
           github-token: ${{ github.token }}
-          run-id: ${{ inputs.resume_run_id }}
+          run-id: ${{ needs.prepare.outputs.resume_run_id }}
       - name: Restore completed language on retry
         if: ${{ matrix.language != 'cover' && github.run_attempt > 1 }}
         continue-on-error: true
@@ -255,13 +273,13 @@ jobs:
           name: category-language-${{ matrix.topic }}-${{ matrix.language }}
           path: work/blog
       - name: Restore partial validated sections from the source run
-        if: ${{ matrix.language != 'cover' && inputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_progress), format('{0}-{1}', matrix.topic, matrix.language)) }}
+        if: ${{ matrix.language != 'cover' && needs.prepare.outputs.resume_run_id != '' && contains(fromJSON(needs.prepare.outputs.resume_progress), format('{0}-{1}', matrix.topic, matrix.language)) }}
         uses: actions/download-artifact@v7
         with:
           name: category-progress-${{ matrix.topic }}-${{ matrix.language }}
           path: work/blog
           github-token: ${{ github.token }}
-          run-id: ${{ inputs.resume_run_id }}
+          run-id: ${{ needs.prepare.outputs.resume_run_id }}
       - name: Restore partial validated sections on retry
         if: ${{ matrix.language != 'cover' && github.run_attempt > 1 }}
         continue-on-error: true

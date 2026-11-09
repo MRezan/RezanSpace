@@ -171,3 +171,29 @@ verify that cached transfers resume without committing an incomplete deployment.
 ### Deployment speed (2026-11-08)
 
 The live deployment timing showed the production build finishing in 81 seconds; FTPS transfer was the long-running step. Deployment keeps two transfer sessions, skips matching content hashes, and resumes confirmed uploads after interruption. Existing manifest paths now seed the directory cache, avoiding repeated MKD/PWD/CWD requests for folders already deployed. New folders are still created normally, assets precede HTML, and the sitemap and completed manifest remain last. The manual deployment workflow also caches npm downloads. Transfer progress includes elapsed seconds; actual speed gains depend on the changed file count and hosting latency.
+
+
+### 2026-11-09 — review and multilingual recovery
+
+Run `42520619650` generated all 16 English originals and illustrations, but 28
+translations failed and the full-coverage gate correctly skipped publishing.
+Most failures were caused by an 800-character cap on the reviewer's diagnostic
+notes, which discarded an otherwise validated draft and regenerated it.
+Review notes now retain the explicit approval/rejection decision without a
+metadata length cap. Malformed review responses retry only review and preserve
+the validated draft if exhausted. Genuine rejections still block publication;
+their findings now guide the next draft and survive checkpoint recovery.
+
+Paragraph repair recognizes Bengali/Hindi danda and Arabic question marks and
+protects inline code while splitting surrounding sentences. It preserves every
+word; impossible partitions still require model correction.
+
+For an explicit live recovery using existing Git SSH access, write the numeric
+source hourly run ID to `.github/blog-recovery-trigger` and push that file to
+`main`. An explicit recovery supersedes the older in-progress hourly batch;
+scheduled ticks wait without cancelling recovery. This starts the same
+full-coverage workflow and reuses validated originals,
+images, translations and section checkpoints from that run. Ordinary code pushes
+do not publish. Manual `workflow_dispatch` with `resume_run_id` still supports
+preview and live modes. Recovery never bypasses source-run trust checks, language
+validation, evidence review, the 240-article gate, or deployed URL verification.
