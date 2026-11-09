@@ -105,6 +105,29 @@ class GenerationRecoveryTests(unittest.TestCase):
    blog.generate_section('instructions',{'original_section':{}},'pt-BR',0)
   prompts=[call.args[0][-1]['content'] for call in request.call_args_list]
   self.assertIn('Brazilian Portuguese',prompts[0]);self.assertIn('detected_language',prompts[1]);self.assertIn('language_mismatch',output.getvalue())
+ def test_translation_requests_only_reviewed_metadata_and_current_original_section(self):
+  original=article()
+  with patch.object(blog,'request',side_effect=self.response) as request,patch('langid.classify',return_value=('id',1)):
+   blog.generate(self.manifest,'id',original)
+  outline=json.loads(request.call_args_list[0].args[0][-1]['content'].split('\nCreate metadata',1)[0])
+  self.assertEqual(outline['original_metadata']['title'],original['title'])
+  self.assertEqual(outline['original_headings'],[s['heading'] for s in original['sections']])
+  self.assertNotIn('sources',outline);self.assertNotIn('original_article',outline)
+  sections=[c for c in request.call_args_list if c.args[2]==2000]
+  for index,call in enumerate(sections):
+   evidence=json.loads(call.args[0][-1]['content'].split('\nWrite ONLY',1)[0])
+   self.assertEqual(evidence['original_section'],original['sections'][index])
+   self.assertNotIn('sources',evidence)
+  review=json.loads(request.call_args_list[-1].args[0][-1]['content'])
+  self.assertEqual(review['sources'],self.manifest['sources'])
+  self.assertEqual(review['original'],original)
+ def test_outline_correction_names_the_actual_detected_language(self):
+  with patch.object(blog,'request',side_effect=self.response) as request,patch('langid.classify',side_effect=[('ms',1)]+[('id',1)]*7),patch('sys.stdout',new_callable=io.StringIO) as output:
+   blog.generate(self.manifest,'id',article())
+  outlines=[c.args[0][-1]['content'] for c in request.call_args_list if c.args[2]==1800]
+  self.assertEqual(len(outlines),2)
+  self.assertIn('detected as ms',outlines[1]);self.assertIn('Bahasa Indonesia',outlines[1])
+  self.assertIn('detected_language',output.getvalue())
  def test_outline_language_mismatch_stops_before_expensive_body_generation(self):
   with patch.object(blog,'request',return_value=copy.deepcopy(self.outline)) as request,patch('langid.classify',return_value=('en',1)),patch('sys.stdout',new_callable=io.StringIO),self.assertRaises(blog.BlogError):
    blog.generate(self.manifest,'pt-BR',article())

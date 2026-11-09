@@ -197,3 +197,11 @@ images, translations and section checkpoints from that run. Ordinary code pushes
 do not publish. Manual `workflow_dispatch` with `resume_run_id` still supports
 preview and live modes. Recovery never bypasses source-run trust checks, language
 validation, evidence review, the 240-article gate, or deployed URL verification.
+
+Translation outline generation now receives only reviewed English metadata and
+ordered headings. Each body request receives only its reviewed original section,
+translated title and headings; the complete raw sources and English original
+remain available to final evidence review. Wrong-language retries name the actual
+detected language. Generation policy fingerprints advance to version 4 so old
+partial drafts are not mixed with the changed translation prompts; completed,
+reviewed language artifacts remain reusable.

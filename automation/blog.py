@@ -12,7 +12,7 @@ from urllib.parse import urlsplit
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parent
-LANGUAGES = {'en':'English','es':'Spanish','pt-BR':'Brazilian Portuguese','hi':'Hindi','id':'Indonesian','ar':'Arabic','fr':'French','de':'German','ja':'Japanese','bn':'Bengali','vi':'Vietnamese','tr':'Turkish','ko':'Korean','it':'Italian','pl':'Polish'}
+LANGUAGES = {'en':'English','es':'Spanish','pt-BR':'Brazilian Portuguese','hi':'Hindi','id':'Indonesian (Bahasa Indonesia)','ar':'Arabic','fr':'French','de':'German','ja':'Japanese','bn':'Bengali','vi':'Vietnamese','tr':'Turkish','ko':'Korean','it':'Italian','pl':'Polish'}
 SCHEMA = {'type':'object','additionalProperties':False,'required':['title','excerpt','image_prompt','image_alt','sections'], 'properties': {
  'title':{'type':'string','minLength':12,'maxLength':140},
  'excerpt':{'type':'string','minLength':40,'maxLength':170},
@@ -247,7 +247,7 @@ def review_article(article,manifest,english):
  raise ReviewResponseError('Review response invalid after three attempts; validated draft retained for recovery')
 
 def generation_fingerprint(manifest,language,english):
- return hashlib.sha256(json.dumps({'version':3,'manifest':manifest,'language':language,'original':english},sort_keys=True,ensure_ascii=False).encode()).hexdigest()
+ return hashlib.sha256(json.dumps({'version':4,'manifest':manifest,'language':language,'original':english},sort_keys=True,ensure_ascii=False).encode()).hexdigest()
 
 def restore_generation(checkpoint,fingerprint,outline_schema,source_ids,language):
  """A partial draft is reusable only for the exact evidence and generation policy."""
@@ -284,7 +284,11 @@ def generate(manifest,language,english=None,checkpoint=None):
   'image_alt must be in the article language and describe the illustration. Return only complete schema-valid JSON.')
  data={'sources':manifest['sources'],'category':manifest['category']}
  if english:
-  data['original_article']=english;instructions+=' Translate and localize the provided original article faithfully; preserve its facts and section order. Do not add new claims.'
+  # Translate only the reviewed metadata here. Mixing a full English article
+  # and raw source pages into an outline request encourages copying English.
+  data={'category':manifest['category'],'original_metadata':{field:english[field] for field in ['title','excerpt','image_prompt','image_alt']},
+        'original_headings':[section['heading'] for section in english['sections']]}
+  instructions+=' You are translating the reviewed English article. Translate all provided metadata and headings faithfully into '+LANGUAGES[language]+'. Preserve the exact five-section order. Do not add new claims or summarize the English body.'
  else:data['avoid_existing_titles']=manifest.get('recent_titles',[])
  outline_schema=copy.deepcopy(SCHEMA)
  outline_schema['properties']['sections']['minItems']=5;outline_schema['properties']['sections']['maxItems']=5
@@ -311,14 +315,20 @@ def generate(manifest,language,english=None,checkpoint=None):
     validate_prose_language(' '.join([article['title'],article['excerpt']]+[section['heading'] for section in article['sections']]),language)
    except (ValidationError,SectionLanguageError) as error:
     feedback='\nMetadata or outline was invalid. Write all title, excerpt and headings in '+LANGUAGES[language]+(' (not English)' if language!='en' else '')+', respecting the exact field types, minimum lengths and five-section structure. Correction attempt '+str(attempt+2)+'.'
-    print(json.dumps({'check':'article_outline_retry','language':language,'attempt':attempt+1,'reason':error.validator if isinstance(error,ValidationError) else 'language_mismatch'}),flush=True)
+    details={'reason':error.validator,'path':'/'.join(str(p) for p in error.absolute_path)} if isinstance(error,ValidationError) else {'reason':'language_mismatch','detected_language':error.detected}
+    if isinstance(error,SectionLanguageError):feedback+=' The previous metadata was detected as '+error.detected+'; translate every title, excerpt and heading into '+LANGUAGES[language]+', rather than copying wording from that language.'
+    print(json.dumps({'check':'article_outline_retry','language':language,'attempt':attempt+1,**details}),flush=True)
     if checkpoint:save(checkpoint,{'fingerprint':fingerprint,'article':None})
     continue
   if checkpoint:save(checkpoint,{'fingerprint':fingerprint,'article':article})
   for index,section in enumerate(article['sections']):
    if 'paragraphs' in section:continue
    evidence={'sources':manifest['sources'],'article_title':article['title'],'all_headings':[item['heading'] for item in article['sections']],'current_section':section['heading']}
-   if english:evidence['original_section']=english['sections'][index]
+   if english:
+    # The reviewed original is the translation evidence. Raw source prose is
+    # reserved for the independent final factual review, not translation input.
+    evidence.pop('sources')
+    evidence['original_section']=english['sections'][index]
    section['paragraphs']=generate_section(instructions,evidence,language,index);section['source_ids']=source_ids
    if checkpoint:save(checkpoint,{'fingerprint':fingerprint,'article':article})
   try:
