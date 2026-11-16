@@ -2,6 +2,7 @@ import copy
 import importlib.util
 import json
 from pathlib import Path
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -14,6 +15,23 @@ def article():
 
 class BlogTests(unittest.TestCase):
  def setUp(self):self.manifest={'key':blog.source_key('https://www.nasa.gov/example/'),'category':'Science','sources':[{'id':1,'url':'https://www.nasa.gov/example/','title':'NASA source','text':'Source evidence'}]}
+ def test_plan_skips_broken_and_previously_published_articles_in_the_same_feed(self):
+  from requests import HTTPError
+  host='www.smithsonianmag.com'
+  feed_url=f'https://{host}/rss/travel/'
+  links=[f'https://{host}/travel/{name}/' for name in ('old','broken','available')]
+  feed={'feed':feed_url,'hosts':[host],'category':'Travel'}
+  rss='<rss><channel>'+''.join(f'<item><link>{link}</link><title>Travel source</title></item>' for link in links)+'</channel></rss>'
+  snapshot=[{'translation_key':blog.source_key(links[0]),'title':'An earlier article'}]
+  evidence='<article><p>'+('Primary travel evidence. '*65)+'</p></article>'
+  with tempfile.TemporaryDirectory() as directory:
+   root=Path(directory)
+   blog.save(root/'sources.json',[feed])
+   with patch.object(blog,'ROOT',root),patch.object(blog,'fetch_source',side_effect=[rss,HTTPError(),evidence]) as fetch:
+    self.assertTrue(blog.plan(snapshot,root/'manifest.json','Travel'))
+   self.assertEqual([call.args[0] for call in fetch.call_args_list],[feed_url,*links[1:]])
+   self.assertEqual(json.loads((root/'manifest.json').read_text())['key'],blog.source_key(links[2]))
+
  def test_resume_reuses_completed_content_only_from_the_main_ai_workflow(self):
   import sys
   with patch.dict(sys.modules,{'blog':blog}):

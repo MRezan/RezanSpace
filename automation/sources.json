@@ -127,6 +127,17 @@
     ]
   },
   {
+    "feed": "https://www.australia.com/en/places.html",
+    "category": "Travel",
+    "format": "html",
+    "hosts": [
+      "www.australia.com"
+    ],
+    "prefixes": [
+      "https://www.australia.com/en/places/"
+    ]
+  },
+  {
     "feed": "https://blog.ricksteves.com/feed/",
     "category": "Travel Planning",
     "hosts": [

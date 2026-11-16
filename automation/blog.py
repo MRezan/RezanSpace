@@ -66,6 +66,7 @@ def fetch_source(url,hosts):
 
 def plan(snapshot,output,category=None):
  from bs4 import BeautifulSoup
+ from requests import RequestException
  existing={post.get('translation_key') for post in snapshot}
  recent_titles=[post['title'] for post in snapshot if post.get('language','en')=='en'][:100]
  feeds=json.loads((ROOT/'sources.json').read_text())
@@ -93,25 +94,32 @@ def plan(snapshot,output,category=None):
       for child in entry.findall('{http://www.w3.org/2005/Atom}link'):
        if child.attrib.get('rel','alternate')=='alternate':link=child.attrib.get('href');break
      entries.append((link,entry.findtext('title') or entry.findtext('{http://www.w3.org/2005/Atom}title') or ''))
-   successful_feeds+=1
-   for link,title in entries[:50]:
-    if feed.get('keywords') and not any(word in (title+' '+str(link)).lower() for word in feed['keywords']):continue
-    if not link or not allowed_url(link,feed['hosts']):continue
-    link=link.split('#')[0];key=source_key(link)
-    # Incomplete previously published batches are repaired by the delivery stage's idempotent slugs.
-    if key in existing:continue
-    soup=BeautifulSoup(fetch_source(link,feed['hosts']),'html.parser')
-    for node in soup(['script','style','nav','footer','header','aside','form']):node.decompose()
-    article=soup.find('article') or soup.find('main') or soup.body
-    if not article:continue
-    paragraphs=[p.get_text(' ',strip=True) for p in article.find_all(['p','h2','h3','li'])]
-    text='\n'.join(paragraphs)
-    if len(text)<1200:continue
-    title=title or (soup.h1.get_text(' ',strip=True) if soup.h1 else 'Source report')
-    save(output,{'key':key,'category':feed['category'],'sources':[{'id':1,'url':link,'title':title,'text':text[:9000]}],'recent_titles':recent_titles,'model':'Qwen/Qwen3-4B-Instruct-2507'})
-    return True
-  except Exception as error:
-   print(f'Source feed unavailable ({type(error).__name__}); trying another publisher.',flush=True)
+  except (RequestException,BlogError,ET.ParseError) as error:
+   host=urlsplit(feed['feed']).hostname
+   print(f"{feed['category']} feed from {host} unavailable ({type(error).__name__}); trying another publisher.",flush=True)
+   continue
+  successful_feeds+=1
+  for link,title in entries[:50]:
+   if feed.get('keywords') and not any(word in (title+' '+str(link)).lower() for word in feed['keywords']):continue
+   if not link or not allowed_url(link,feed['hosts']):continue
+   link=link.split('#')[0];key=source_key(link)
+   # Incomplete previously published batches are repaired by the delivery stage's idempotent slugs.
+   if key in existing:continue
+   try:
+    raw_article=fetch_source(link,feed['hosts'])
+   except (RequestException,BlogError) as error:
+    print(f"{feed['category']} article unavailable ({type(error).__name__}); trying the next article.",flush=True)
+    continue
+   soup=BeautifulSoup(raw_article,'html.parser')
+   for node in soup(['script','style','nav','footer','header','aside','form']):node.decompose()
+   article=soup.find('article') or soup.find('main') or soup.body
+   if not article:continue
+   paragraphs=[p.get_text(' ',strip=True) for p in article.find_all(['p','h2','h3','li'])]
+   text='\n'.join(paragraphs)
+   if len(text)<1200:continue
+   title=title or (soup.h1.get_text(' ',strip=True) if soup.h1 else 'Source report')
+   save(output,{'key':key,'category':feed['category'],'sources':[{'id':1,'url':link,'title':title,'text':text[:9000]}],'recent_titles':recent_titles,'model':'Qwen/Qwen3-4B-Instruct-2507'})
+   return True
  if not successful_feeds:raise BlogError('All source feeds failed; no article will be invented')
  return False
 

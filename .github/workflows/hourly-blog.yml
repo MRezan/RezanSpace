@@ -50,7 +50,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with: {persist-credentials: false}
-      - name: Resolve the explicit recovery source
+      - name: Resolve the publishing trigger
         id: recovery
         env:
           INPUT_RUN_ID: ${{ inputs.resume_run_id }}
@@ -59,9 +59,13 @@ jobs:
           python - <<'PYRECOVERY'
           import os
           from pathlib import Path
-          value=Path('.github/blog-recovery-trigger').read_text().strip() if os.environ['IS_PUSH']=='true' else os.environ.get('INPUT_RUN_ID','')
+          is_push=os.environ['IS_PUSH']=='true'
+          value=Path('.github/blog-recovery-trigger').read_text().strip() if is_push else os.environ.get('INPUT_RUN_ID','')
+          if is_push and value=='fresh':
+              value=''
+          elif is_push and not value:
+              raise ValueError('Push trigger must contain a source run ID or fresh')
           if value and not (value.isascii() and value.isdigit()):raise ValueError('Recovery source must be a numeric run ID')
-          if os.environ['IS_PUSH']=='true' and not value:raise ValueError('Explicit recovery requires a source run ID')
           with open(os.environ['GITHUB_OUTPUT'],'a') as output:output.write('run_id='+value+'\n')
           PYRECOVERY
       - uses: actions/setup-python@v6

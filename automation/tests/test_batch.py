@@ -113,12 +113,12 @@ class BatchTests(unittest.TestCase):
   script=step['run'].split("<<'PYRECOVERY'\n",1)[1].rsplit('PYRECOVERY',1)[0]
   with tempfile.TemporaryDirectory() as directory:
    work=Path(directory);(work/'.github').mkdir()
-   for pushed,value,valid in [('false','42520619650',True),('false','',True),('false','42\nother=value',False),('true','42520619650',True),('true','',False),('true','../unsafe',False)]:
+   for pushed,value,valid in [('false','42520619650',True),('false','',True),('false','42\nother=value',False),('true','42520619650',True),('true','',False),('true','../unsafe',False),('true','fresh',True),('false','fresh',False)]:
     (work/'.github/blog-recovery-trigger').write_text(value)
     output=work/'outputs';output.write_text('')
     result=subprocess.run([sys.executable,'-c',script],cwd=work,env={**os.environ,'IS_PUSH':pushed,'INPUT_RUN_ID':value,'GITHUB_OUTPUT':str(output)},capture_output=True)
     self.assertEqual(result.returncode==0,valid)
-    self.assertEqual(output.read_text(),'run_id='+value+'\n' if valid else '')
+    self.assertEqual(output.read_text(),'run_id='+('' if value=='fresh' else value)+'\n' if valid else '')
  def test_missing_translation_blocks_the_batch(self):
   with tempfile.TemporaryDirectory() as directory:
    work=Path(directory);self.prepare(work)
