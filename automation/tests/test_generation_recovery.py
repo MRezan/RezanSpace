@@ -167,6 +167,23 @@ class GenerationRecoveryTests(unittest.TestCase):
     with patch.object(blog,'request',side_effect=self.response) as request,patch('langid.classify',return_value=('en',1)),patch('sys.stdout',new_callable=io.StringIO):
      blog.generate(self.manifest,'en',checkpoint=checkpoint)
     self.assertEqual(request.call_args_list[0].args[2],1800)
+ def test_translation_review_findings_reach_the_retried_paragraphs(self):
+  first_review=True
+  def respond(messages,schema,budget):
+   nonlocal first_review
+   if budget==1000 and first_review:
+    first_review=False
+    return {'approved':False,'issues':'Section 2 omitted the original caveat.'}
+   return self.response(messages,schema,budget)
+  with patch.object(blog,'request',side_effect=respond) as request,patch('langid.classify',return_value=('fr',1)),patch('sys.stdout',new_callable=io.StringIO):
+   blog.generate(self.manifest,'fr',english=article())
+  section_prompts=[call.args[0][-1]['content'] for call in request.call_args_list if call.args[2]==2000]
+  self.assertEqual(len(section_prompts),10)
+  self.assertTrue(all('Section 2 omitted' not in prompt for prompt in section_prompts[:5]))
+  self.assertTrue(all('Section 2 omitted the original caveat' in prompt for prompt in section_prompts[5:]))
+  review_prompts=[call.args[0][0]['content'] for call in request.call_args_list if call.args[2]==1000]
+  self.assertTrue(all('reviewed English original as the authority' in prompt for prompt in review_prompts))
+
  def test_evidence_review_rejection_clears_partial_checkpoint(self):
   with tempfile.TemporaryDirectory() as directory:
    checkpoint=Path(directory)/'en.progress.json'
