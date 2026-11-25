@@ -89,6 +89,8 @@ try{
 }catch(PDOException $error){if($pdo->inTransaction())$pdo->rollBack();automationError($error->getCode()==='23000'?409:500,'The publishing request could not be completed.');}
 catch(Throwable $error){if($pdo->inTransaction())$pdo->rollBack();throw $error;}
 
-$refresh=($createdPosts||$updatedPosts)?publishedContentChanged($pdo,$config,(string)(($createdPosts[0]??$updatedPosts[0])['slug'])):['sitemap_updated'=>false,'deployment_queued'=>false];
+// A prior request may have committed its posts before sitemap/deployment failed.
+// Idempotent retries must repair those side effects even when all slugs exist.
+$refresh=($createdPosts||$updatedPosts||$skippedPosts)?publishedContentChanged($pdo,$config,(string)(($createdPosts[0]??$updatedPosts[0]??$skippedPosts[0])['slug'])):['sitemap_updated'=>false,'deployment_queued'=>false];
 http_response_code($createdPosts||$createdCategories?201:200);
 echo json_encode(['ok'=>true,'categories'=>['created'=>$createdCategories,'existing'=>array_values($existingCategories)],'posts'=>['created'=>$createdPosts,'updated'=>$updatedPosts,'skipped'=>$skippedPosts],'counts'=>['categories_created'=>count($createdCategories),'posts_created'=>count($createdPosts),'posts_updated'=>count($updatedPosts),'posts_skipped'=>count($skippedPosts)]]+$refresh);

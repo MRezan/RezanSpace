@@ -6,7 +6,15 @@ export function metadataFailure(actual,expectedUrl,expectedLanguage){
  if(!actual.canonical||canonical!==expectedUrl)return `canonical ${JSON.stringify(actual.canonical)} (expected ${expectedUrl})`;
  return null;
 }
-export async function verifyPublicPage(page,url,language,{attempts=3,delay=1500}={}){
+export function articleSeoFailure(actual,title){
+ if(!actual.title?.includes(title))return 'article page title is missing or stale';
+ if(!actual.description?.trim())return 'article meta description is missing';
+ if(actual.headings?.length!==1||actual.headings[0]!==title)return 'article must have exactly one H1 matching its title';
+ if(/\b(noindex|none)\b/i.test(actual.robots||''))return 'article indexing is disabled';
+ if(!actual.articleSchema)return 'matching BlogPosting structured data is missing';
+ return null;
+}
+export async function verifyPublicPage(page,url,language,{attempts=3,delay=1500,articleTitle}={}){
  let problem='No document received';
  for(let attempt=1;attempt<=attempts;attempt++){
   let status=null;
@@ -15,8 +23,18 @@ export async function verifyPublicPage(page,url,language,{attempts=3,delay=1500}
    // Host challenge pages may execute JavaScript before the real document loads.
    // No stealth, certificate bypass or CAPTCHA solving is used.
    await page.locator('head link[rel="canonical"]').waitFor({state:'attached',timeout:15000});
-   const actual=await page.evaluate(()=>({language:document.documentElement.lang,canonical:document.querySelector('head link[rel="canonical"]')?.getAttribute('href')??null}));
-   problem=metadataFailure({...actual,status},url,language);
+   const actual=await page.evaluate((title)=>{
+    const nodes=[];
+    for(const script of document.querySelectorAll('script[type="application/ld+json"]')){
+     try{const value=JSON.parse(script.textContent);nodes.push(...(Array.isArray(value)?value:value['@graph']||[value]));}catch{/* Invalid schema fails the article check below. */}
+    }
+    return {language:document.documentElement.lang,canonical:document.querySelector('head link[rel="canonical"]')?.getAttribute('href')??null,
+     title:document.title,description:document.querySelector('meta[name="description"]')?.content,
+     headings:[...document.querySelectorAll('h1')].map(node=>node.textContent.trim()),
+     robots:[...document.querySelectorAll('meta[name="robots"],meta[name="googlebot"]')].map(node=>node.content).join(','),
+     articleSchema:nodes.some(node=>['BlogPosting','Article','NewsArticle'].includes(node['@type'])&&node.headline===title)};
+   },articleTitle);
+   problem=metadataFailure({...actual,status},url,language)||(articleTitle?articleSeoFailure(actual,articleTitle):null);
    if(!problem){console.log(`Verified ${language}: ${url}`);return;}
   }catch(error){problem=`navigation/metadata unavailable (${error.name||'Error'}; HTTP ${status??'unknown'})`;}
   console.warn(`Verification attempt ${attempt}/${attempts}: ${url}: ${problem}`);

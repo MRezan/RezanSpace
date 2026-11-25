@@ -391,6 +391,7 @@ jobs:
         run: |
           npm ci
           npm run build -- --webpack
+          node scripts/verify-article-seo.mjs
       - name: Deploy managed files to InfinityFree
         if: ${{ github.event_name == 'schedule' || !inputs.dry_run }}
         env:

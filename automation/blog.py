@@ -275,7 +275,7 @@ def review_article(article,manifest,english):
  raise ReviewResponseError('Review response invalid after three attempts; validated draft retained for recovery')
 
 def generation_fingerprint(manifest,language,english):
- return hashlib.sha256(json.dumps({'version':5,'manifest':manifest,'language':language,'original':english},sort_keys=True,ensure_ascii=False).encode()).hexdigest()
+ return hashlib.sha256(json.dumps({'version':6,'manifest':manifest,'language':language,'original':english},sort_keys=True,ensure_ascii=False).encode()).hexdigest()
 
 def restore_generation(checkpoint,fingerprint,outline_schema,source_ids,language):
  """A partial draft is reusable only for the exact evidence and generation policy."""
@@ -305,6 +305,10 @@ def generate(manifest,language,english=None,checkpoint=None):
   'Use only facts supported by the packet. Do not invent tests, personal experience, quotations, statistics, dates or sources. '
   'Explain why the development matters and its limitations. Avoid medical, investment or legal advice. '
   'Use natural headings without keyword stuffing or copied source sentences. All text fields must be plain text. '
+  'Serve one clear search intent grounded in the packet. Name the specific topic naturally in the descriptive title, excerpt and relevant headings. '
+  'Make the excerpt a unique, useful search description of what the reader will learn, without clickbait or unsupported promises. '
+  'Start the first section with a direct answer or explanation of the main topic; then cover evidence, practical implications and limitations. '
+  'Use distinct descriptive headings for related reader questions where supported. Do not repeat keywords, invent FAQs or claim expertise you do not have. '
   'The article must provide a full explanation rather than a short news summary. '
   'Do not put URLs or HTML formatting in prose; citations are appended automatically. Wrap literal code examples in backticks. '
   'The title should be under 100 characters and excerpt under 160 characters. '

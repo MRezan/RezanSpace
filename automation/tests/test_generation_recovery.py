@@ -135,6 +135,15 @@ class GenerationRecoveryTests(unittest.TestCase):
     self.assertIn('every fact, caveat, attribution, number and conclusion',task)
     self.assertNotIn('Aim for 300',task)
     self.assertNotIn('Explain specifics',task)
+ def test_original_generation_uses_evidence_grounded_search_intent(self):
+  with patch.object(blog,'request',side_effect=self.response) as request,patch('langid.classify',return_value=('en',1)):
+   blog.generate(self.manifest,'en')
+  prompts=[call.args[0][0]['content'] for call in request.call_args_list if call.args[2] in (1800,2000)]
+  self.assertEqual(len(prompts),6)
+  for prompt in prompts:
+   self.assertIn('one clear search intent grounded in the packet',prompt)
+   self.assertIn('direct answer or explanation',prompt)
+   self.assertIn('without clickbait or unsupported promises',prompt)
  def test_translation_length_repair_preserves_meaning_without_expansion(self):
   responses=[{'paragraphs':['Too short.']*2},{'paragraphs':[self.paragraph]*2}]
   with patch.object(blog,'request',side_effect=responses) as request,patch('langid.classify',return_value=('hi',1)),patch('sys.stdout',new_callable=io.StringIO):

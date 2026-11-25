@@ -9,8 +9,10 @@ $rows=[['slug'=>'solar-en','language'=>'en','translation_key'=>'solar','updated_
 $xml=new DOMDocument();check($xml->loadXML(multilingualSitemapXml('https://example.com',$rows)),'Valid XML');
 $xpath=new DOMXPath($xml);$xpath->registerNamespace('s','http://www.sitemaps.org/schemas/sitemap/0.9');$xpath->registerNamespace('x','http://www.w3.org/1999/xhtml');
 check($xpath->query('//s:url')->length===24,'15 homes, six editorials and three stories');
-foreach(['en','bn'] as $language){$entry="//s:url[s:loc='https://example.com/$language/post/solar-$language/']";check($xpath->query($entry.'/x:link')->length===2,'Only actual reciprocal translations');}
-check($xpath->query("//s:url[s:loc='https://example.com/es/post/independent-es/']/x:link")->length===1,'Unrelated story has only itself');
+foreach(['en','bn'] as $language){$entry="//s:url[s:loc='https://example.com/$language/post/solar-$language/']";check($xpath->query($entry.'/x:link')->length===3,'Actual reciprocal translations and x-default');check($xpath->query($entry."/x:link[@hreflang='x-default' and @href='https://example.com/en/post/solar-en/']")->length===1,'Consistent default translation');}
+check($xpath->query("//s:url[s:loc='https://example.com/es/post/independent-es/']/x:link")->length===2,'Unrelated story has only itself and its default');
+check($xpath->query("//s:url[s:loc='https://example.com/article/small-models-big-moment/']")->length===1,'Editorial sitemap uses its canonical URL');
+check(!str_contains($xml->saveXML(),'/en/article/'),'No noncanonical editorial aliases');
 check(!str_contains($xml->saveXML(),'/fr/post/'),'No nonexistent translation');
 check(localizedPostPath(['language'=>'bn','slug'=>'সৌরশক্তি'])==='/bn/post/'.rawurlencode('সৌরশক্তি').'/','Native script slug');
 $chunks=multilingualSitemapDocuments('https://example.com',$rows,10);

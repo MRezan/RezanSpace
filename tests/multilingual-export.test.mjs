@@ -3,6 +3,27 @@ import {readFile,access} from 'node:fs/promises';
 import test from 'node:test';
 const locales=['en','es','pt-BR','hi','id','ar','fr','de','ja','bn','vi','tr','ko','it','pl'];
 const html=path=>readFile(new URL(`../out/${path}/index.html`,import.meta.url),'utf8');
+test('every published article exports an indexable standalone landing page',async()=>{
+ const posts=JSON.parse(await readFile(new URL('./fixtures/multilingual-posts.json',import.meta.url),'utf8'));
+ for(const post of posts){
+  const page=await html(`${post.language}/post/${post.slug}`);
+  assert.equal((page.match(/<h1\b/g)||[]).length,1,post.slug);
+  assert.ok(page.includes(`<h1 id="reader-title">${post.title}</h1>`),post.slug);
+  assert.ok(page.includes(`<title>${post.title}`),post.slug);
+  assert.match(page,/<meta name="description" content="[^"]+"/);
+  assert.ok(page.includes(`rel="canonical" href="https://example.com/${post.language}/post/${post.slug}/"`));
+  assert.ok(!/<meta name="(?:robots|googlebot)" content="[^"]*noindex/i.test(page));
+  const schema=[...page.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].flatMap(match=>{const data=JSON.parse(match[1]);return data['@graph']||[data];});
+  assert.ok(schema.some(node=>node['@type']==='BlogPosting'&&node.headline===post.title));
+ }
+});
+test('sitemap lists canonical editorial URLs and reciprocal default translations',async()=>{
+ const xml=await readFile(new URL('../out/sitemap.xml',import.meta.url),'utf8');
+ assert.ok(xml.includes('https://example.com/article/small-models-big-moment/'));
+ assert.ok(!xml.includes('/en/article/'));
+ const entry=xml.match(/<url><loc>https:\/\/example.com\/bn\/post\/solar-energy-bn\/<\/loc>[\s\S]*?<\/url>/)?.[0];
+ assert.ok(entry?.includes('hreflang="x-default" href="https://example.com/en/post/solar-energy-en/"'));
+});
 // Run against a build using tests/fixtures/multilingual-posts.json and NEXT_PUBLIC_SITE_URL=https://example.com.
 for(const locale of locales)test(`${locale}: static language, direction, canonical and reciprocal home alternates`,async()=>{const page=await html(locale);assert.match(page,new RegExp(`<html[^>]*lang="${locale}"`));assert.match(page,new RegExp(`dir="${locale==='ar'?'rtl':'ltr'}"`));assert.ok(page.includes(`rel="canonical" href="https://example.com/${locale}/"`));for(const alternate of locales)assert.ok(page.includes(`hrefLang="${alternate}" href="https://example.com/${alternate}/"`));});
 test('translated article HTML contains authored text and only real alternate articles',async()=>{const page=await html('bn/post/solar-energy-bn');assert.ok(page.includes('সৌর প্যানেল সূর্যের আলোকে বিদ্যুতে রূপান্তর করে।'));for(const locale of ['en','bn','ar'])assert.ok(page.includes(`hrefLang="${locale}" href="https://example.com/${locale}/post/solar-energy-${locale}/"`));assert.ok(!page.includes('hrefLang="fr" href="https://example.com/fr/post/'));assert.match(page,/"inLanguage":"bn"/);assert.ok(page.includes('BreadcrumbList'));assert.ok(!page.includes('Solar panels convert sunlight'));});

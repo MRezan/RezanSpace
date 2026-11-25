@@ -1,2 +1,2 @@
-verify-only
-Validate the fully uploaded 68d4a39 release with browser metadata checks; do not rebuild or re-upload.
+deploy
+Rebuild article landing pages with canonical sitemap URLs and SEO validation.

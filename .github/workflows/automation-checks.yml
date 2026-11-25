@@ -21,10 +21,12 @@ jobs:
           python -m unittest discover -s automation/tests -v
           node --check automation/delivery.mjs
           node --test tests/live-verification.test.mjs
+          node --test tests/seo-export-gate.test.mjs
           php -l backend/lib/site-publish.php
           php -l backend/api/automation-media.php
           php -l backend/api/automation-health.php
           php -l backend/lib/automation-auth.php
+          php tests/publishing-recovery.php
       - run: |
           npm ci
           npm run test:categories
@@ -34,3 +36,4 @@ jobs:
           php -l backend/api/posts.php
           php tests/firebase-auth.php
           npm run test:i18n
+          REZAN_POSTS_FILE=tests/fixtures/multilingual-posts.json NEXT_PUBLIC_SITE_URL=https://example.com node scripts/verify-article-seo.mjs

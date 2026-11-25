@@ -1,8 +1,22 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {metadataFailure,verifyPublicPage} from '../automation/live-verification.mjs';
+import {metadataFailure,articleSeoFailure,verifyPublicPage} from '../automation/live-verification.mjs';
 const url='https://rezan.space/pt-BR/';
 const good={status:200,language:'pt-BR',canonical:url};
+test('article verification blocks missing SEO, stale titles, duplicate H1s and noindex',()=>{
+ const title='Solar energy explained';
+ const article={title:title+' | REZAN',description:'How sunlight becomes electricity.',headings:[title],robots:'index, follow',articleSchema:true};
+ assert.equal(articleSeoFailure(article,title),null);
+ for(const change of [{title:'Old page'},{description:' '},{headings:[]},{headings:[title,title]},{headings:['Wrong topic']},{robots:'noindex, follow'},{robots:'none'},{articleSchema:false}]){
+  assert.ok(articleSeoFailure({...article,...change},title));
+ }
+});
+test('valid canonical alone cannot hide broken article SEO',async()=>{
+ let visits=0;
+ const page={goto:async()=>{visits++;return {status:()=>200}},locator:()=>({waitFor:async()=>{}}),evaluate:async()=>({...good,title:'Wrong article'})};
+ await assert.rejects(verifyPublicPage(page,url,'pt-BR',{delay:0,articleTitle:'Expected article'}),/article page title/);
+ assert.equal(visits,3);
+});
 test('canonical is parsed and matched exactly, not searched anywhere in raw HTML',()=>{
  assert.equal(metadataFailure(good,url,'pt-BR'),null);
  assert.equal(metadataFailure({...good,canonical:'/pt-BR/'},url,'pt-BR'),null);

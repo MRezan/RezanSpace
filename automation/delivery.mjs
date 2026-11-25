@@ -94,7 +94,7 @@ try{
   for(const slug of published.slugs){
    const post=rows.find(item=>item.slug===slug);const target=new URL(`/${post.language}/post/${encodeURIComponent(slug)}/`,site);
    if(!xml.includes(target.href))throw new Error('A newly published article is missing from the deployed sitemap');
-   await verifyPublicPage(page,target.href,post.language);
+   await verifyPublicPage(page,target.href,post.language,{articleTitle:post.title});
   }
   console.log(`Verified ${published.slugs.length} live article pages and their sitemap entries.`);
  } else if(stage==='verify-site'){
@@ -106,7 +106,7 @@ try{
   const xml=await deployedSitemap();
   for(const post of rows){const url=new URL(`/${post.language}/post/${encodeURIComponent(post.slug)}/`,site);if(!xml.includes(url.href))throw new Error('A published article is missing from the live sitemap');}
   const samples=[rows[0],rows.at(-1)].filter(Boolean);
-  for(const post of samples){const url=new URL(`/${post.language}/post/${encodeURIComponent(post.slug)}/`,site);await verifyPublicPage(page,url.href,post.language);}
+  for(const post of samples){const url=new URL(`/${post.language}/post/${encodeURIComponent(post.slug)}/`,site);await verifyPublicPage(page,url.href,post.language,{articleTitle:post.title});}
   console.log(`Verified 15 live language homes, ${rows.length} article sitemap entries and representative article HTML.`);
  } else throw new Error('Unknown delivery stage');
 } finally{await browser.close();}

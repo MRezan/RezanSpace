@@ -90,6 +90,7 @@ jobs:
         run: |
           npm ci
           npm run build -- --webpack
+          node scripts/verify-article-seo.mjs
       - name: Upload managed files using verified FTPS
         if: steps.mode.outputs.verify_only != 'true'
         env:

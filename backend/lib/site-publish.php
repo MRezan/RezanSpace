@@ -9,8 +9,8 @@ function multilingualSitemapDocuments(string $site,array $rows,int $maxUrls=1000
     $homes=[];foreach(supportedLanguages() as $language)$homes[$language]=$site.'/'.$language.'/';
     $entries=[];foreach($homes as $url)$entries[]=['url'=>$url,'alternates'=>$homes+['x-default'=>$site.'/']];
     $groups=[];foreach($rows as $row){$key=!empty($row['translation_key'])?'group:'.$row['translation_key']:'slug:'.$row['slug'];$groups[$key][$row['language']]=$site.localizedPostPath($row);}
-    foreach($rows as $row){$key=!empty($row['translation_key'])?'group:'.$row['translation_key']:'slug:'.$row['slug'];$entries[]=['url'=>$site.localizedPostPath($row),'modified'=>$row['updated_at'],'alternates'=>$groups[$key]];}
-    foreach(['small-models-big-moment','browser-becomes-operating-system','passkeys-finally-ready','quiet-luxury-gadgets','four-day-week-data','open-source-ai-stack'] as $slug)$entries[]=['url'=>$site.'/en/article/'.$slug.'/','alternates'=>[]];
+    foreach($rows as $row){$key=!empty($row['translation_key'])?'group:'.$row['translation_key']:'slug:'.$row['slug'];$entries[]=['url'=>$site.localizedPostPath($row),'modified'=>$row['updated_at'],'alternates'=>$groups[$key]+['x-default'=>$groups[$key]['en']??reset($groups[$key])]];}
+    foreach(['small-models-big-moment','browser-becomes-operating-system','passkeys-finally-ready','quiet-luxury-gadgets','four-day-week-data','open-source-ai-stack'] as $slug)$entries[]=['url'=>$site.'/article/'.$slug.'/','alternates'=>[]];
     $header="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\">\n";
     $documents=[];$xml=$header;$count=0;$bytes=strlen($header.'</urlset>');
     foreach($entries as $entry){
