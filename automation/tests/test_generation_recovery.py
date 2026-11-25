@@ -121,6 +121,28 @@ class GenerationRecoveryTests(unittest.TestCase):
   review=json.loads(request.call_args_list[-1].args[0][-1]['content'])
   self.assertEqual(review['sources'],self.manifest['sources'])
   self.assertEqual(review['original'],original)
+ def test_translation_never_receives_original_writing_or_expansion_instructions(self):
+  with patch.object(blog,'request',side_effect=self.response) as request,patch('langid.classify',return_value=('bn',1)):
+   blog.generate(self.manifest,'bn',article())
+  for call in request.call_args_list:
+   if call.args[2] not in (1800,2000):continue
+   system=call.args[0][0]['content']
+   self.assertIn('faithful translator',system)
+   self.assertNotIn('Write an original',system)
+   self.assertNotIn('full explanation rather than a short news summary',system)
+   if call.args[2]==2000:
+    task=call.args[0][-1]['content']
+    self.assertIn('every fact, caveat, attribution, number and conclusion',task)
+    self.assertNotIn('Aim for 300',task)
+    self.assertNotIn('Explain specifics',task)
+ def test_translation_length_repair_preserves_meaning_without_expansion(self):
+  responses=[{'paragraphs':['Too short.']*2},{'paragraphs':[self.paragraph]*2}]
+  with patch.object(blog,'request',side_effect=responses) as request,patch('langid.classify',return_value=('hi',1)),patch('sys.stdout',new_callable=io.StringIO):
+   blog.generate_section('Translate faithfully',{'original_section':article()['sections'][0]},'hi',0)
+  retry=request.call_args_list[1].args[0][-1]['content']
+  self.assertIn('without adding or omitting facts',retry)
+  self.assertNotIn('explain further details',retry)
+  self.assertNotIn('Return two paragraphs, each 300',retry)
  def test_outline_correction_names_the_actual_detected_language(self):
   with patch.object(blog,'request',side_effect=self.response) as request,patch('langid.classify',side_effect=[('ms',1)]+[('id',1)]*7),patch('sys.stdout',new_callable=io.StringIO) as output:
    blog.generate(self.manifest,'id',article())
